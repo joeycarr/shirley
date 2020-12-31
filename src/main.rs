@@ -4,7 +4,7 @@ mod vec3;
 
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
-use vec3::{Color, Point3, unit_vector, Vec3};
+use vec3::{Color, dot, Point3, unit_vector, Vec3};
 
 fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
@@ -26,7 +26,19 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 }
 
-fn ray_color(ray: Ray) -> Color {
+fn hit_sphere(center: Point3, radius: f64, ray: &Ray) -> bool {
+    let oc = ray.origin - center;
+    let a = dot(ray.direction, ray.direction);
+    let b = 2. * dot(oc, ray.direction);
+    let c = dot(oc, oc) - radius*radius;
+    let discriminant = b*b - 4.*a*c;
+    return discriminant > 0.;
+}
+
+fn ray_color(ray: &Ray) -> Color {
+    if hit_sphere(Point3::new(0., 0., -1.), 0.5, ray) {
+        return Color::new(1., 0., 0.);
+    }
     let unit_direction = unit_vector(ray.direction);
     let t = 0.5*(unit_direction.y + 1.0);
     return (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0);
@@ -58,7 +70,7 @@ fn main() {
             let v = j as f64 / (image_height-1) as f64;
 
             let r = Ray::new(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-            let pixel_color = ray_color(r);
+            let pixel_color = ray_color(&r);
             data.push(pixel_color.x);
             data.push(pixel_color.y);
             data.push(pixel_color.z);
