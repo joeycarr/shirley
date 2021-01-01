@@ -39,7 +39,7 @@ fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
     }
     let mut hit_record = HitRecord::new();
     if world.hit(ray, 0.001, f64::INFINITY, &mut hit_record) {
-        let target = hit_record.point + hit_record.normal + Vec3::random_unit_vector();
+        let target = hit_record.point + Vec3::random_in_hemisphere(hit_record.normal);
         0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
     } else {
         let unit_direction = unit_vector(ray.direction);
