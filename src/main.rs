@@ -8,7 +8,7 @@ mod vec3;
 use camera::Camera;
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
-use vec3::{Color, Point3, unit_vector};
+use vec3::{Color, Point3, unit_vector, Vec3};
 use hittable::{Hittable, HittableList, HitRecord};
 use rand::random;
 use sphere::Sphere;
@@ -20,9 +20,9 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
     let mut i = 0;
     for y in 0..height {
         for x in 0..width {
-            let r = (data[i] * 255f64) as u8;
-            let g = (data[i+1] * 255f64) as u8;
-            let b = (data[i+2] * 255f64) as u8;
+            let r = (data[i] * 256.) as u8;
+            let g = (data[i+1] * 256.) as u8;
+            let b = (data[i+2] * 256.) as u8;
             img.put_pixel( x as u32, y as u32, Rgb([r, g, b]));
 
             i += 3;
@@ -33,10 +33,14 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 }
 
-fn ray_color(ray: Ray, world: &HittableList) -> Color {
+fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
+    if depth <= 0 {
+        return Color::new(0., 0., 0.);
+    }
     let mut hit_record = HitRecord::new();
     if world.hit(ray, 0., f64::INFINITY, &mut hit_record) {
-        0.5 * (hit_record.normal + Color::new(1., 1., 1.))
+        let target = hit_record.point + hit_record.normal + Vec3::random_in_unit_sphere();
+        0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
     } else {
         let unit_direction = unit_vector(ray.direction);
         let t = 0.5*(unit_direction.y + 1.0);
@@ -51,6 +55,7 @@ fn main() {
     let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pixel = 100;
+    let max_depth = 50;
 
     // World
     let mut world = HittableList::new();
@@ -66,16 +71,17 @@ fn main() {
     for j in (0..image_height).rev() {
         for i in 0..image_width {
             let mut pixel_color = Color::new(0., 0., 0.);
-            for s in 0..samples_per_pixel {
+            for _ in 0..samples_per_pixel {
                 let u = (i as f64 + random::<f64>()) / (image_width-1) as f64;
                 let v = (j as f64 + random::<f64>()) / (image_height-1) as f64;
 
                 let r = camera.get_ray(u, v);
-                pixel_color += ray_color(r, &world);
+                pixel_color += ray_color(r, &world, max_depth);
             }
-            data.push(pixel_color.x / samples_per_pixel as f64);
-            data.push(pixel_color.y / samples_per_pixel as f64);
-            data.push(pixel_color.z / samples_per_pixel as f64);
+            let scale = 1. / samples_per_pixel as f64;
+            data.push((pixel_color.x * scale).sqrt());
+            data.push((pixel_color.y * scale).sqrt());
+            data.push((pixel_color.z * scale).sqrt());
         }
     }
 

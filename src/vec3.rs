@@ -1,4 +1,12 @@
+use rand;
+use rand::Rng;
 use std::{fmt, ops};
+
+fn rf64() -> f64 { rand::random::<f64>() }
+fn randrange(min: f64, max: f64) -> f64 {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(min..max)
+}
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3 {
@@ -19,6 +27,28 @@ impl Vec3 {
 
     pub fn length(&self) -> f64 {
         self.length_squared().sqrt()
+    }
+
+    pub fn random() -> Vec3 {
+        Vec3::new(rf64(), rf64(), rf64())
+    }
+
+    pub fn randrange(min: f64, max: f64) -> Vec3 {
+        Vec3::new(
+            randrange(min, max),
+            randrange(min, max),
+            randrange(min, max))
+    }
+
+    pub fn random_in_unit_sphere() -> Vec3 {
+        loop {
+            let p = Vec3::randrange(-1., 1.);
+            if p.length_squared() >= 1. {
+                continue;
+            } else {
+                return p;
+            }
+        }
     }
 }
 
