@@ -1,10 +1,14 @@
 
 mod ray;
 mod vec3;
+mod hittable;
+mod sphere;
 
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
 use vec3::{Color, dot, Point3, unit_vector, Vec3};
+use hittable::{Hittable, HittableList, HitRecord};
+use sphere::Sphere;
 
 fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
@@ -39,15 +43,14 @@ fn hit_sphere(center: Point3, radius: f64, ray: &Ray) -> f64 {
     }
 }
 
-fn ray_color(ray: &Ray) -> Color {
-    let t = hit_sphere(Point3::new(0., 0., -1.), 0.5, ray);
-    if t > 0.0 {
-        let N = unit_vector(ray.at(t) - Vec3::new(0., 0., -1.));
-        return 0.5 * Color::new(N.x+1., N.y+1., N.z+1.);
+fn ray_color(ray: Ray, world: &HittableList) -> Color {
+    let mut hit_record = HitRecord::new();
+    if world.hit(ray, 0., f64::INFINITY, &mut hit_record) {
+        0.5 * (hit_record.normal + Color::new(1., 1., 1.))
     } else {
         let unit_direction = unit_vector(ray.direction);
         let t = 0.5*(unit_direction.y + 1.0);
-        return (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0);
+        (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0)
     }
 }
 
@@ -57,6 +60,11 @@ fn main() {
     let aspect_ratio = 16.0/9.0;
     let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
+
+    // World
+    let mut world = HittableList::new();
+    world.add(Box::new(Sphere::new(Point3::new(0., 0., -1.), 0.5)));
+    world.add(Box::new(Sphere::new(Point3::new(0., -100.5, -1.), 100.)));
 
     // Camera
     let viewport_height = 2.0;
@@ -77,7 +85,7 @@ fn main() {
             let v = j as f64 / (image_height-1) as f64;
 
             let r = Ray::new(origin, lower_left_corner + u*horizontal + v*vertical - origin);
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(r, &world);
             data.push(pixel_color.x);
             data.push(pixel_color.y);
             data.push(pixel_color.z);
