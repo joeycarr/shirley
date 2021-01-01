@@ -28,14 +28,14 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 fn hit_sphere(center: Point3, radius: f64, ray: &Ray) -> f64 {
     let oc = ray.origin - center;
-    let a = dot(ray.direction, ray.direction);
-    let b = 2. * dot(oc, ray.direction);
-    let c = dot(oc, oc) - radius*radius;
-    let discriminant = b*b - 4.*a*c;
+    let a = ray.direction.length_squared();
+    let half_b = dot(oc, ray.direction);
+    let c = oc.length_squared() - radius*radius;
+    let discriminant = half_b*half_b - a*c;
     if discriminant < 0. {
         return -1.
     } else {
-        return (-b - discriminant.sqrt()) / (2.*a);
+        return (-half_b - discriminant.sqrt()) / a;
     }
 }
 
