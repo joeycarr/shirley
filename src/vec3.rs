@@ -50,6 +50,10 @@ impl Vec3 {
             }
         }
     }
+
+    pub fn random_unit_vector() -> Vec3 {
+        unit_vector(Vec3::random_in_unit_sphere())
+    }
 }
 
 pub type Color = Vec3;
