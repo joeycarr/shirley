@@ -26,22 +26,29 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 }
 
-fn hit_sphere(center: Point3, radius: f64, ray: &Ray) -> bool {
+fn hit_sphere(center: Point3, radius: f64, ray: &Ray) -> f64 {
     let oc = ray.origin - center;
     let a = dot(ray.direction, ray.direction);
     let b = 2. * dot(oc, ray.direction);
     let c = dot(oc, oc) - radius*radius;
     let discriminant = b*b - 4.*a*c;
-    return discriminant > 0.;
+    if discriminant < 0. {
+        return -1.
+    } else {
+        return (-b - discriminant.sqrt()) / (2.*a);
+    }
 }
 
 fn ray_color(ray: &Ray) -> Color {
-    if hit_sphere(Point3::new(0., 0., -1.), 0.5, ray) {
-        return Color::new(1., 0., 0.);
+    let t = hit_sphere(Point3::new(0., 0., -1.), 0.5, ray);
+    if t > 0.0 {
+        let N = unit_vector(ray.at(t) - Vec3::new(0., 0., -1.));
+        return 0.5 * Color::new(N.x+1., N.y+1., N.z+1.);
+    } else {
+        let unit_direction = unit_vector(ray.direction);
+        let t = 0.5*(unit_direction.y + 1.0);
+        return (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0);
     }
-    let unit_direction = unit_vector(ray.direction);
-    let t = 0.5*(unit_direction.y + 1.0);
-    return (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0);
 }
 
 fn main() {
