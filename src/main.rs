@@ -38,7 +38,7 @@ fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
         return Color::new(0., 0., 0.);
     }
     let mut hit_record = HitRecord::new();
-    if world.hit(ray, 0., f64::INFINITY, &mut hit_record) {
+    if world.hit(ray, 0.001, f64::INFINITY, &mut hit_record) {
         let target = hit_record.point + hit_record.normal + Vec3::random_in_unit_sphere();
         0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
     } else {
