@@ -70,6 +70,12 @@ impl Vec3 {
         self.z = other.z;
     }
 
+    pub fn set(&mut self, x: f64, y: f64, z: f64) {
+        self.x = x;
+        self.y = y;
+        self.z = z;
+    }
+
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
         return self.x.abs() < s && self.y.abs() < s && self.z.abs() < s;

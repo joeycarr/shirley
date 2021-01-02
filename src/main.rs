@@ -78,8 +78,8 @@ fn main() {
     let mut world = HittableList::new();
 
     let material_ground = Material::new_lambertian(0.8, 0.8, 0.0);
-    let material_center = Material::new_lambertian(0.7, 0.3, 0.3);
-    let material_left = Material::new_metal((0.8, 0.8, 0.8), 0.3);
+    let material_center = Material::new_dielectric(1.5);
+    let material_left = Material::new_dielectric(1.5);
     let material_right = Material::new_metal((0.8, 0.6, 0.2), 1.0);
 
     world.add(Box::new(Sphere::new(

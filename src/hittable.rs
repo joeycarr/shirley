@@ -1,7 +1,6 @@
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
 use crate::materials::Material;
-use std::rc::Rc;
 
 pub struct HitRecord {
     pub point: Point3,
@@ -21,12 +20,8 @@ impl HitRecord {
     }
 
     pub fn set_face_normal(&mut self, ray: Ray, outward_normal: Vec3) {
-        let front_face = dot(ray.direction, outward_normal) < 0.0;
-        if front_face {
-            self.normal = outward_normal;
-        } else {
-            self.normal = -outward_normal;
-        }
+        self.front_face = dot(ray.direction, outward_normal) < 0.0;
+        self.normal = if self.front_face { outward_normal } else { -outward_normal };
     }
 
     pub fn copy(&mut self, other: &HitRecord) {
