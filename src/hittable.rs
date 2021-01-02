@@ -38,7 +38,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<Rc<dyn Material>>);
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>);
 }
 
 pub struct HittableList {
@@ -60,19 +60,19 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<Rc<dyn Material>>) {
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>) {
         let mut temp_rec = HitRecord::new();
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
-        let mut material: Option<Rc<dyn Material>> = None;
+        let mut material: Option<&Material> = None;
 
         for object in &self.objects {
             let tup = object.hit(ray, t_min, closest_so_far, &mut temp_rec);
             let hit: bool = tup.0;
-            material = tup.1;
             if hit {
                 hit_anything = true;
+                material = tup.1;
                 closest_so_far = temp_rec.t;
                 hit_record.copy(&temp_rec);
             }
