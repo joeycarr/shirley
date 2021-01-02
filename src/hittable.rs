@@ -1,9 +1,12 @@
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
+use crate::materials::Material;
+use std::rc::Rc;
 
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
+    pub material: Option<Rc<dyn Material>>,
     pub t: f64,
     pub front_face: bool,
 }
@@ -13,6 +16,7 @@ impl HitRecord {
         HitRecord{
             point: Point3::new(0., 0., 0.),
             normal: Vec3::new(0., 0., 0.),
+            material: None,
             t: 0.,
             front_face: false
         }

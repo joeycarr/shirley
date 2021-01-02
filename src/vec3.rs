@@ -63,6 +63,17 @@ impl Vec3 {
             -in_unit_sphere
         }
     }
+
+    pub fn copy(&mut self, other: Vec3) {
+        self.x = other.x;
+        self.y = other.y;
+        self.z = other.z;
+    }
+
+    pub fn near_zero(&self) -> bool {
+        let s = 1e-8;
+        return self.x.abs() < s && self.y.abs() < s && self.z.abs() < s;
+    }
 }
 
 pub type Color = Vec3;
