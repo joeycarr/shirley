@@ -75,28 +75,40 @@ fn main() {
     let max_depth = 50;
 
     // World
+
+    let R = (std::f64::consts::PI / 4.0).cos();
+
     let mut world = HittableList::new();
 
-    let material_ground = Material::new_lambertian(0.8, 0.8, 0.0);
-    let material_center = Material::new_lambertian(0.1, 0.2, 0.5);
-    let material_left = Material::new_dielectric(1.5);
-    let material_left2 = material_left.clone(); // oops ... can't be shared ...
-    let material_right = Material::new_metal((0.8, 0.6, 0.2), 0.0);
+    let material_left = Material::new_lambertian(0.0, 0.0, 1.0);
+    let material_right = Material::new_lambertian(1.0, 0.0, 0.0);
 
     world.add(Box::new(Sphere::new(
-        Point3::new( 0.0, -100.5, -1.0), 100.0, material_ground)));
+        Point3::new( -R, 0.0, -1.0), R, material_left)));
     world.add(Box::new(Sphere::new(
-        Point3::new( 0.0,    0.0, -1.0),   0.5, material_center)));
-    world.add(Box::new(Sphere::new(
-        Point3::new(-1.0,    0.0, -1.0),   0.5, material_left)));
-    world.add(Box::new(Sphere::new(
-        Point3::new(-1.0,    0.0, -1.0),  -0.4, material_left2)));
-    world.add(Box::new(Sphere::new(
-        Point3::new( 1.0,    0.0, -1.0),   0.5, material_right)));
+        Point3::new(  R, 0.0, -1.0), R, material_right)));
+
+
+    // let material_ground = Material::new_lambertian(0.8, 0.8, 0.0);
+    // let material_center = Material::new_lambertian(0.1, 0.2, 0.5);
+    // let material_left = Material::new_dielectric(1.5);
+    // let material_left2 = material_left.clone(); // oops ... can't be shared ...
+    // let material_right = Material::new_metal((0.8, 0.6, 0.2), 0.0);
+    //
+    // world.add(Box::new(Sphere::new(
+    //     Point3::new( 0.0, -100.5, -1.0), 100.0, material_ground)));
+    // world.add(Box::new(Sphere::new(
+    //     Point3::new( 0.0,    0.0, -1.0),   0.5, material_center)));
+    // world.add(Box::new(Sphere::new(
+    //     Point3::new(-1.0,    0.0, -1.0),   0.5, material_left)));
+    // world.add(Box::new(Sphere::new(
+    //     Point3::new(-1.0,    0.0, -1.0),  -0.4, material_left2)));
+    // world.add(Box::new(Sphere::new(
+    //     Point3::new( 1.0,    0.0, -1.0),   0.5, material_right)));
 
 
     // Camera
-    let camera = Camera::new(16./9.);
+    let camera = Camera::new(90.0, 16./9.);
 
     // Render
     let mut data: Vec<f64> = Vec::with_capacity(image_width*image_height*3);
