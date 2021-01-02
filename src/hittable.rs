@@ -6,7 +6,6 @@ use std::rc::Rc;
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
-    pub material: Option<Rc<dyn Material>>,
     pub t: f64,
     pub front_face: bool,
 }
@@ -16,7 +15,6 @@ impl HitRecord {
         HitRecord{
             point: Point3::new(0., 0., 0.),
             normal: Vec3::new(0., 0., 0.),
-            material: None,
             t: 0.,
             front_face: false
         }
@@ -40,7 +38,7 @@ impl HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool;
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<Rc<dyn Material>>);
 }
 
 pub struct HittableList {
@@ -62,19 +60,24 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<Rc<dyn Material>>) {
         let mut temp_rec = HitRecord::new();
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 
+        let mut material: Option<Rc<dyn Material>> = None;
+
         for object in &self.objects {
-            if object.hit(ray, t_min, closest_so_far, &mut temp_rec) {
+            let tup = object.hit(ray, t_min, closest_so_far, &mut temp_rec);
+            let hit: bool = tup.0;
+            material = tup.1;
+            if hit {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
                 hit_record.copy(&temp_rec);
             }
         }
 
-        return hit_anything;
+        return (hit_anything, material);
     }
 }

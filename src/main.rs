@@ -41,19 +41,22 @@ fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
         return Color::new(0., 0., 0.);
     }
     let mut hit_record = HitRecord::new();
-    if world.hit(ray, 0.001, f64::INFINITY, &mut hit_record) {
+    let tup = world.hit(ray, 0.001, f64::INFINITY, &mut hit_record);
+    let hit = tup.0;
+    let material = tup.1;
+    if hit {
         let mut ray_scattered = Ray::new(
             Point3::new(0., 0., 0.),
             Vec3::new(0., 0., 0.)
         );
         let mut attenuation = Color::new(0., 0., 0.);
-        let mut scattered = match(hit_record.material) {
-            Some(material) => material.scatter(ray, &mut hit_record, &mut attenuation, &mut ray_scattered),
+        match material {
+            Some(material) => {
+                material.scatter(ray, &mut hit_record, &mut attenuation, &mut ray_scattered);
+                return attenuation * ray_color(ray_scattered, world, depth-1);
+            },
             None => false
         };
-        if scattered {
-            return attenuation * ray_color(ray_scattered, world, depth-1);
-        }
         let target = hit_record.point + Vec3::random_in_hemisphere(hit_record.normal);
         0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
     } else {
