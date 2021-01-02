@@ -65,10 +65,32 @@ fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
     }
 }
 
+fn random_scene() -> HittableList {
+    let mut world = HittableList::new();
+
+    let ground_material = Material::new_lambertian(0.5, 0.5, 0.5);
+    world.add(Box::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material)));
+
+    let material1 = Material::new_dielectric(1.5);
+    world.add(Box::new(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0), 1.0, material1)));
+
+    let material2 = Material::new_lambertian(0.4, 0.2, 0.1);
+    world.add(Box::new(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0), 1.0, material2)));
+
+    let material3 = Material::new_metal((0.7, 0.6, 0.5), 0.0);
+    world.add(Box::new(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0), 1.0, material3)));
+
+    world
+}
+
 fn main() {
 
     // Image
-    let aspect_ratio = 16.0/9.0;
+    let aspect_ratio = 3.0/2.0;
     let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pixel = 100;
@@ -76,39 +98,20 @@ fn main() {
 
     // World
 
-    let mut world = HittableList::new();
-
-    let material_ground = Material::new_lambertian(0.8, 0.8, 0.0);
-    let material_center = Material::new_lambertian(0.1, 0.2, 0.5);
-    let material_left = Material::new_dielectric(1.5);
-    let material_left2 = material_left.clone(); // oops ... can't be shared ...
-    let material_right = Material::new_metal((0.8, 0.6, 0.2), 0.0);
-
-    world.add(Box::new(Sphere::new(
-        Point3::new( 0.0, -100.5, -1.0), 100.0, material_ground)));
-    world.add(Box::new(Sphere::new(
-        Point3::new( 0.0,    0.0, -1.0),   0.5, material_center)));
-    world.add(Box::new(Sphere::new(
-        Point3::new(-1.0,    0.0, -1.0),   0.5, material_left)));
-    world.add(Box::new(Sphere::new(
-        Point3::new(-1.0,    0.0, -1.0), -0.45, material_left2)));
-    world.add(Box::new(Sphere::new(
-        Point3::new( 1.0,    0.0, -1.0),   0.5, material_right)));
-
+    let world = random_scene();
 
     // Camera
 
-    let lookfrom = Point3::new(3.0, 3.0, 2.0);
-    let lookat = Point3::new(0.0, 0.0, -1.0);
+    let lookfrom = Point3::new(13.0, 2.0, 3.0);
+    let lookat = Point3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0,  0.0);
-    let dist_to_focus = (lookfrom-lookat).length();
+    let dist_to_focus = 10.0;
+    let aperture = 0.1;
 
     let camera = Camera::new(
         lookfrom, lookat, vup,
-        20.0,     // vertical fov
-        16.0/9.0, // aspect ratio
-        2.0,      // aperture
-        dist_to_focus,
+        20.0, // vertical fov
+        aspect_ratio, aperture, dist_to_focus,
     );
 
     // Render
