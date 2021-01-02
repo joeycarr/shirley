@@ -1,7 +1,9 @@
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::vec3::{Color, dot, unit_vector, Vec3};
+use rand;
 
+#[derive(Clone)]
 pub enum Material {
     Lambertian{ albedo: Color },
     Metal{ albedo: Color, fuzz: f64 },
@@ -52,6 +54,12 @@ pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64 ) -> Vec3 {
     return r_out_perp + r_out_parallel;
 }
 
+pub fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
+    let r0 = (1.0-ref_idx) / (1.0+ref_idx);
+    let r0 = r0*r0;
+    return r0 + (1.0-r0)*(1.0 -cosine).powi(5);
+}
+
 fn scatter_dielectric(
     ior: f64,
     ray_in: Ray,
@@ -67,7 +75,7 @@ fn scatter_dielectric(
 
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
 
-        let direction = if cannot_refract {
+        let direction = if cannot_refract || reflectance(cos_theta, refraction_ratio) > rand::random::<f64>() {
             reflect(unit_direction, hit_record.normal)
         } else {
             refract(unit_direction, hit_record.normal, refraction_ratio)

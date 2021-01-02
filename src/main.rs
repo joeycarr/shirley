@@ -80,6 +80,7 @@ fn main() {
     let material_ground = Material::new_lambertian(0.8, 0.8, 0.0);
     let material_center = Material::new_lambertian(0.1, 0.2, 0.5);
     let material_left = Material::new_dielectric(1.5);
+    let material_left2 = material_left.clone(); // oops ... can't be shared ...
     let material_right = Material::new_metal((0.8, 0.6, 0.2), 0.0);
 
     world.add(Box::new(Sphere::new(
@@ -88,6 +89,8 @@ fn main() {
         Point3::new( 0.0,    0.0, -1.0),   0.5, material_center)));
     world.add(Box::new(Sphere::new(
         Point3::new(-1.0,    0.0, -1.0),   0.5, material_left)));
+    world.add(Box::new(Sphere::new(
+        Point3::new(-1.0,    0.0, -1.0),  -0.4, material_left2)));
     world.add(Box::new(Sphere::new(
         Point3::new( 1.0,    0.0, -1.0),   0.5, material_right)));
 
