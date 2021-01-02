@@ -4,7 +4,7 @@ use crate::vec3::{Color, dot, unit_vector, Vec3};
 
 pub enum Material {
     Lambertian{ albedo: Color },
-    Metal{ albedo: Color },
+    Metal{ albedo: Color, fuzz: f64 },
 }
 
 impl Material {
@@ -13,8 +13,9 @@ impl Material {
         Material::Lambertian{ albedo: Color::new(r, g, b) }
     }
 
-    pub fn new_metal(r: f64, g: f64, b: f64) -> Material {
-        Material::Metal{ albedo: Color::new(r, g, b) }
+    pub fn new_metal(rgb: (f64, f64, f64), fuzz: f64) -> Material {
+        let (r, g, b) = rgb;
+        Material::Metal{ albedo: Color::new(r, g, b), fuzz }
     }
 
     pub fn scatter(
@@ -25,8 +26,8 @@ impl Material {
         ray_scattered: &mut Ray) -> bool {
 
             match self {
-                Material::Lambertian{ albedo } => scatter_lambertian(albedo, ray_in, hit_record, attenuation, ray_scattered),
-                Material::Metal{ albedo } => scatter_metal(albedo, ray_in, hit_record, attenuation, ray_scattered)
+                Material::Lambertian{ albedo } => scatter_lambertian(*albedo, ray_in, hit_record, attenuation, ray_scattered),
+                Material::Metal{ albedo, fuzz } => scatter_metal(*albedo, *fuzz, ray_in, hit_record, attenuation, ray_scattered)
             }
         }
 }
@@ -36,7 +37,7 @@ pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
 }
 
 fn scatter_lambertian(
-    albedo: &Color,
+    albedo: Color,
     _ray_in: Ray,
     hit_record: &mut HitRecord,
     attenuation: &mut Color,
@@ -49,19 +50,21 @@ fn scatter_lambertian(
 
         ray_scattered.origin.copy(hit_record.point);
         ray_scattered.direction.copy(scatter_direction);
-        attenuation.copy(*albedo); // creating a dumb copy, I think?
+        attenuation.copy(albedo);
         return true;
 }
 
 fn scatter_metal(
-    albedo: &Color,
+    albedo: Color,
+    fuzz: f64,
     ray_in: Ray,
     hit_record: &mut HitRecord,
     attenuation: &mut Color,
     ray_scattered: &mut Ray) -> bool {
+        let fuzz = if fuzz < 1.0 { fuzz } else { 1.0 };
         let reflected = reflect(unit_vector(ray_in.direction), hit_record.normal);
         ray_scattered.origin.copy(hit_record.point);
-        ray_scattered.direction.copy(reflected);
-        attenuation.copy(*albedo);
+        ray_scattered.direction.copy(reflected + fuzz*Vec3::random_in_unit_sphere());
+        attenuation.copy(albedo);
         return true;
 }

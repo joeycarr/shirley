@@ -79,8 +79,8 @@ fn main() {
 
     let material_ground = Material::new_lambertian(0.8, 0.8, 0.0);
     let material_center = Material::new_lambertian(0.7, 0.3, 0.3);
-    let material_left = Material::new_metal(0.8, 0.8, 0.8);
-    let material_right = Material::new_metal(0.8, 0.6, 0.2);
+    let material_left = Material::new_metal((0.8, 0.8, 0.8), 0.3);
+    let material_right = Material::new_metal((0.8, 0.6, 0.2), 1.0);
 
     world.add(Box::new(Sphere::new(
         Point3::new( 0.0, -100.5, -1.0), 100.0, material_ground)));
