@@ -97,12 +97,18 @@ fn main() {
 
 
     // Camera
+
+    let lookfrom = Point3::new(3.0, 3.0, 2.0);
+    let lookat = Point3::new(0.0, 0.0, -1.0);
+    let vup = Vec3::new(0.0, 1.0,  0.0);
+    let dist_to_focus = (lookfrom-lookat).length();
+
     let camera = Camera::new(
-        Point3::new(-2.0, 2.0,  1.0), // lookfrom / origin
-        Point3::new( 0.0, 0.0, -1.0), // lookat
-        Vec3::new(   0.0, 1.0,  0.0), // up vector
-        20.0,    // vertical fov
-        16.0/9.0 // aspect ratio
+        lookfrom, lookat, vup,
+        20.0,     // vertical fov
+        16.0/9.0, // aspect ratio
+        2.0,      // aperture
+        dist_to_focus,
     );
 
     // Render
