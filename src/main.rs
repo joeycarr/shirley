@@ -7,13 +7,13 @@ mod sphere;
 mod vec3;
 
 use camera::Camera;
-use hittable::{Hittable, HittableList, HitRecord};
+use hittable::HitRecord;
 use image::{ImageBuffer, RgbImage, Rgb};
 use materials::Material;
 use ray::Ray;
 use rand::random;
 use rand::Rng;
-use sphere::Sphere;
+use sphere::{Sphere, SphereList};
 use std::thread;
 use std::sync::Arc;
 use vec3::{Color, Point3, unit_vector, Vec3};
@@ -68,7 +68,7 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 }
 
-fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
+fn ray_color(ray: Ray, world: &SphereList, depth: usize) -> Color {
     if depth <= 0 {
         return Color::new(0., 0., 0.);
     }
@@ -98,12 +98,12 @@ fn ray_color(ray: Ray, world: &HittableList, depth: usize) -> Color {
     }
 }
 
-fn random_scene() -> HittableList {
-    let mut world = HittableList::new();
+fn random_scene() -> SphereList {
+    let mut world = SphereList::new();
 
     let ground_material = Material::new_lambertian(0.5, 0.5, 0.5);
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material)));
+    world.add(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -137,28 +137,28 @@ fn random_scene() -> HittableList {
                         Material::new_dielectric(1.5)
                     }
                 };
-                world.add(Box::new(Sphere::new(center, 0.2, material)));
+                world.add(Sphere::new(center, 0.2, material));
             }
         }
     }
 
     let material1 = Material::new_dielectric(1.5);
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0), 1.0, material1)));
+    world.add(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0), 1.0, material1));
 
     let material2 = Material::new_lambertian(0.4, 0.2, 0.1);
-    world.add(Box::new(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0), 1.0, material2)));
+    world.add(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0), 1.0, material2));
 
     let material3 = Material::new_metal((0.7, 0.6, 0.5), 0.0);
-    world.add(Box::new(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0), 1.0, material3)));
+    world.add(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0), 1.0, material3));
 
     world
 }
 
 fn render(
-    world: &HittableList,
+    world: &SphereList,
     camera: &Camera,
     image_width: usize,
     image_height: usize,

@@ -1,5 +1,5 @@
-use crate::hittable::{Hittable, HitRecord};
-use crate::ray::{Ray};
+use crate::hittable::HitRecord;
+use crate::ray::Ray;
 use crate::vec3::{dot, Point3};
 use crate::materials::Material;
 
@@ -13,10 +13,8 @@ impl Sphere {
     pub fn new(center: Point3, radius: f64, material: Material) -> Self {
         Self { center, radius, material }
     }
-}
 
-impl Hittable for Sphere {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>) {
+    pub fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>) {
         let oc = ray.origin - self.center;
         let a = ray.direction.length_squared();
         let half_b = dot(oc, ray.direction);
@@ -40,4 +38,41 @@ impl Hittable for Sphere {
 
         (true, Some(&self.material))
     }
+
+}
+
+pub struct SphereList {
+    objects: Vec<Sphere>,
+}
+
+impl SphereList {
+    pub fn new() -> SphereList {
+        SphereList{ objects: Vec::new() }
+    }
+
+    pub fn add(&mut self, object: Sphere) {
+        self.objects.push(object);
+    }
+
+    pub fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>) {
+        let mut temp_rec = HitRecord::new();
+        let mut hit_anything = false;
+        let mut closest_so_far = t_max;
+
+        let mut material: Option<&Material> = None;
+
+        for object in &self.objects {
+            let tup = object.hit(ray, t_min, closest_so_far, &mut temp_rec);
+            let hit: bool = tup.0;
+            if hit {
+                hit_anything = true;
+                material = tup.1;
+                closest_so_far = temp_rec.t;
+                hit_record.copy(&temp_rec);
+            }
+        }
+
+        return (hit_anything, material);
+    }
+
 }

@@ -1,6 +1,6 @@
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
-use crate::materials::Material;
+// use crate::materials::Material;
 
 pub struct HitRecord {
     pub point: Point3,
@@ -31,48 +31,48 @@ impl HitRecord {
         self.front_face = other.front_face;
     }
 }
-
-pub trait Hittable {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>);
-}
-
-pub struct HittableList {
-    objects: Vec<Box<dyn Hittable>>,
-}
-
-impl HittableList {
-    pub fn new() -> HittableList {
-        HittableList{ objects: Vec::new() }
-    }
-
-    pub fn clear(&mut self) {
-        self.objects.clear();
-    }
-
-    pub fn add(&mut self, object: Box<dyn Hittable>) {
-        self.objects.push(object);
-    }
-}
-
-impl Hittable for HittableList {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>) {
-        let mut temp_rec = HitRecord::new();
-        let mut hit_anything = false;
-        let mut closest_so_far = t_max;
-
-        let mut material: Option<&Material> = None;
-
-        for object in &self.objects {
-            let tup = object.hit(ray, t_min, closest_so_far, &mut temp_rec);
-            let hit: bool = tup.0;
-            if hit {
-                hit_anything = true;
-                material = tup.1;
-                closest_so_far = temp_rec.t;
-                hit_record.copy(&temp_rec);
-            }
-        }
-
-        return (hit_anything, material);
-    }
-}
+//
+// pub trait Hittable {
+//     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>);
+// }
+//
+// pub struct HittableList {
+//     objects: Vec<Box<dyn Hittable>>,
+// }
+//
+// impl HittableList {
+//     pub fn new() -> HittableList {
+//         HittableList{ objects: Vec::new() }
+//     }
+//
+//     pub fn clear(&mut self) {
+//         self.objects.clear();
+//     }
+//
+//     pub fn add(&mut self, object: Box<dyn Hittable>) {
+//         self.objects.push(object);
+//     }
+// }
+//
+// impl Hittable for HittableList {
+//     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> (bool, Option<&Material>) {
+//         let mut temp_rec = HitRecord::new();
+//         let mut hit_anything = false;
+//         let mut closest_so_far = t_max;
+//
+//         let mut material: Option<&Material> = None;
+//
+//         for object in &self.objects {
+//             let tup = object.hit(ray, t_min, closest_so_far, &mut temp_rec);
+//             let hit: bool = tup.0;
+//             if hit {
+//                 hit_anything = true;
+//                 material = tup.1;
+//                 closest_so_far = temp_rec.t;
+//                 hit_record.copy(&temp_rec);
+//             }
+//         }
+//
+//         return (hit_anything, material);
+//     }
+// }
