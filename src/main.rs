@@ -40,10 +40,7 @@ fn average(mut data: Vec<Vec<f64>>) -> Vec<f64> {
     }
 
     let summed = data.pop().unwrap();
-    println!("Summed results: {:?}", summed);
-
     let averaged = summed.iter().map(|x| x/denomenator as f64).collect::<Vec<f64>>();
-    println!("Averaged results: {:?}", averaged);
 
     averaged
 }
@@ -222,6 +219,13 @@ fn main() {
     let mut results: Vec<Vec<f64>> = Vec::new();
     let mut threads: Vec<thread::JoinHandle<Vec<f64>>> = Vec::new();
 
+    let samples_per_thread = (samples_per_pixel as f64 / thread_count as f64).ceil() as usize;
+    println!("Running {} threads at {} samples for a total of {} samples per pixel",
+        thread_count,
+        samples_per_thread,
+        samples_per_thread * thread_count
+    );
+
     for i in 0..thread_count {
         // These will be moved into the thread...
         let worldref = Arc::clone(&worldref);
@@ -229,11 +233,12 @@ fn main() {
 
         let handle = thread::spawn(move || {
             println!("Starting thread #{} of {}", i, thread_count);
-            let data = render(&worldref, &camref, image_width, image_height, samples_per_pixel, max_depth);
+            let data = render(&worldref, &camref, image_width, image_height, samples_per_thread, max_depth);
             println!("Completed thread #{} of {}", i, thread_count);
             data
         });
 
+        threads.push(handle);
     }
 
     for handle in threads {
