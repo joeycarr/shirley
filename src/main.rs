@@ -14,7 +14,39 @@ use ray::Ray;
 use rand::random;
 use rand::Rng;
 use sphere::Sphere;
+use std::thread;
+use std::sync::Arc;
 use vec3::{Color, Point3, unit_vector, Vec3};
+
+/**
+ * Averages the corresponding indices in the given list of vectors. The result is a vector as long
+ * as the shortest inner vector in the data. This is destructive. The input vector is collapsed
+ * down to a single inner vector that's the sum of its contents.
+ */
+fn average(mut data: Vec<Vec<f64>>) -> Vec<f64> {
+    let denomenator = data.len();
+    while data.len() > 1 {
+        // I'm confident this unwrap won't panic (famous last words?)
+        let vec1 = data.pop().unwrap();
+        let vec2 = data.pop().unwrap();
+        let it = vec1.iter().zip(vec2.iter());
+
+        let mut sum: Vec<f64> = Vec::with_capacity(vec1.len().min(vec2.len()));
+        for (a, b) in it {
+            sum.push(a + b);
+        }
+
+        data.push(sum);
+    }
+
+    let summed = data.pop().unwrap();
+    println!("Summed results: {:?}", summed);
+
+    let averaged = summed.iter().map(|x| x/denomenator as f64).collect::<Vec<f64>>();
+    println!("Averaged results: {:?}", averaged);
+
+    averaged
+}
 
 fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
@@ -169,7 +201,6 @@ fn main() {
     let world = random_scene();
 
     // Camera
-
     let lookfrom = Point3::new(13.0, 2.0, 3.0);
     let lookat = Point3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0,  0.0);
@@ -183,7 +214,41 @@ fn main() {
     );
 
     // Render
-    let data = render(&world, &camera, image_width, image_height, samples_per_pixel, max_depth);
-    imsave("render.png", image_width, image_height, data);
+
+    let worldref = Arc::new(world);
+    let camref = Arc::new(camera);
+
+    let thread_count = 8;
+    let mut results: Vec<Vec<f64>> = Vec::new();
+    let mut threads: Vec<thread::JoinHandle<Vec<f64>>> = Vec::new();
+
+    for i in 0..thread_count {
+        // These will be moved into the thread...
+        let worldref = Arc::clone(&worldref);
+        let camref = Arc::clone(&camref);
+
+        let handle = thread::spawn(move || {
+            println!("Starting thread #{} of {}", i, thread_count);
+            let data = render(&worldref, &camref, image_width, image_height, samples_per_pixel, max_depth);
+            println!("Completed thread #{} of {}", i, thread_count);
+            data
+        });
+
+    }
+
+    for handle in threads {
+        match handle.join() {
+            Ok(result) => {
+                results.push(result);
+            }
+            Err(error) => {
+                println!("Thread encountered an error: {:?}", error);
+            }
+        }
+    }
+
+    let image = average(results);
+
+    imsave("render.png", image_width, image_height, image);
 
 }
