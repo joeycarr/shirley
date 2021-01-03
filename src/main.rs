@@ -125,6 +125,36 @@ fn random_scene() -> HittableList {
     world
 }
 
+fn render(
+    world: &HittableList,
+    camera: &Camera,
+    image_width: usize,
+    image_height: usize,
+    samples_per_pixel: usize,
+    max_depth: usize
+) -> Vec<f64> {
+    let mut data: Vec<f64> = Vec::with_capacity(image_width*image_height*3);
+
+    for j in (0..image_height).rev() {
+        for i in 0..image_width {
+            let mut pixel_color = Color::new(0., 0., 0.);
+            for _ in 0..samples_per_pixel {
+                let u = (i as f64 + random::<f64>()) / (image_width-1) as f64;
+                let v = (j as f64 + random::<f64>()) / (image_height-1) as f64;
+
+                let r = camera.get_ray(u, v);
+                pixel_color += ray_color(r, &world, max_depth);
+            }
+            let scale = 1. / samples_per_pixel as f64;
+            data.push((pixel_color.x * scale).sqrt());
+            data.push((pixel_color.y * scale).sqrt());
+            data.push((pixel_color.z * scale).sqrt());
+        }
+    }
+
+    data
+}
+
 fn main() {
 
     // Image
@@ -153,25 +183,7 @@ fn main() {
     );
 
     // Render
-    let mut data: Vec<f64> = Vec::with_capacity(image_width*image_height*3);
-
-    for j in (0..image_height).rev() {
-        for i in 0..image_width {
-            let mut pixel_color = Color::new(0., 0., 0.);
-            for _ in 0..samples_per_pixel {
-                let u = (i as f64 + random::<f64>()) / (image_width-1) as f64;
-                let v = (j as f64 + random::<f64>()) / (image_height-1) as f64;
-
-                let r = camera.get_ray(u, v);
-                pixel_color += ray_color(r, &world, max_depth);
-            }
-            let scale = 1. / samples_per_pixel as f64;
-            data.push((pixel_color.x * scale).sqrt());
-            data.push((pixel_color.y * scale).sqrt());
-            data.push((pixel_color.z * scale).sqrt());
-        }
-    }
-
+    let data = render(&world, &camera, image_width, image_height, samples_per_pixel, max_depth);
     imsave("render.png", image_width, image_height, data);
 
 }
