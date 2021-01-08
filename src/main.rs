@@ -1,7 +1,7 @@
 
 mod camera;
 mod hit;
-mod materials;
+mod material;
 mod ray;
 mod sphere;
 mod vec3;
@@ -13,7 +13,7 @@ use ray::Ray;
 use rand::random;
 use rand::Rng;
 use sphere::Sphere;
-use materials::{Dielectric, Lambertian, Material, Metal};
+use material::{Dielectric, Lambertian, Material, Metal};
 use std::thread;
 use std::sync::Arc;
 use vec3::{Color, Point3, unit_vector, Vec3};
@@ -94,8 +94,8 @@ fn random_scene() -> HitList {
     let mut world = HitList::new();
 
     let ground_material = Lambertian::new(Color::new(0.5, 0.5, 0.5));
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0), 1000.0, Arc::new(ground_material))));
+    world.add(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -107,43 +107,43 @@ fn random_scene() -> HitList {
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
 
-                let material: Arc<dyn Material + Sync + Send> = match choose_mat {
+                let material: Material = match choose_mat {
                     x if x < 0.8 => {
-                        Arc::new(Lambertian::new(Color::new(
+                        Lambertian::new(Color::new(
                             random::<f64>()*random::<f64>(),
                             random::<f64>()*random::<f64>(),
                             random::<f64>()*random::<f64>(),
-                        )))
+                        ))
                     }
                     x if x < 0.95 => {
-                        Arc::new(Metal::new(Color::new(
+                        Metal::new(Color::new(
                                 random::<f64>()*random::<f64>(),
                                 random::<f64>()*random::<f64>(),
                                 random::<f64>()*random::<f64>(),
                             ),
                             rand::thread_rng().gen_range(0.0..0.5)
-                        ))
+                        )
                     }
                     _ => {
-                        Arc::new(Dielectric::new(1.5))
+                        Dielectric::new(1.5)
                     }
                 };
-                world.add(Box::new(Sphere::new(center, 0.2, material)));
+                world.add(Sphere::new(center, 0.2, material));
             }
         }
     }
 
     let material1 = Dielectric::new(1.5);
-    world.add(Box::new(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0), 1.0, Arc::new(material1))));
+    world.add(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0), 1.0, material1));
 
     let material2 = Lambertian::new(Color::new(0.4, 0.2, 0.1));
-    world.add(Box::new(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0), 1.0, Arc::new(material2))));
+    world.add(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0), 1.0, material2));
 
     let material3 = Metal::new(Color::new(0.7, 0.6, 0.5), 0.0);
-    world.add(Box::new(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0), 1.0, Arc::new(material3))));
+    world.add(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0), 1.0, material3));
 
     world
 }

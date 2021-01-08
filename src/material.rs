@@ -2,6 +2,7 @@ use crate::hit::HitRecord;
 use crate::ray::Ray;
 use crate::vec3::{Color, dot, unit_vector, Vec3};
 use rand;
+use std::sync::Arc;
 
 
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
@@ -21,8 +22,7 @@ pub fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     return r0 + (1.0-r0)*(1.0 -cosine).powi(5);
 }
 
-
-pub trait Material {
+pub trait Scatter {
     fn scatter(
         &self,
         ray_in: Ray,
@@ -31,19 +31,20 @@ pub trait Material {
         ray_scattered: &mut Ray) -> bool;
 }
 
+pub type Material = Arc<dyn Scatter + Sync + Send>;
 
 pub struct Lambertian{
     albedo: Color
 }
 
 impl Lambertian {
-    pub fn new(albedo: Color) -> Lambertian {
-        Lambertian{ albedo }
+    pub fn new(albedo: Color) -> Material {
+        Arc::new(Lambertian{ albedo })
     }
 }
 
-impl Material for Lambertian {
-    fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+impl Scatter for Lambertian {
+    fn scatter(&self, _ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         let mut scatter_direction = hit_record.normal + Vec3::random_unit_vector();
 
         if scatter_direction.near_zero() {
@@ -63,12 +64,12 @@ pub struct Metal{
 }
 
 impl Metal {
-    pub fn new(albedo: Color, fuzz: f64) -> Metal {
-        Metal{ albedo, fuzz }
+    pub fn new(albedo: Color, fuzz: f64) -> Material {
+        Arc::new(Metal{ albedo, fuzz })
     }
 }
 
-impl Material for Metal {
+impl Scatter for Metal {
     fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         let fuzz = if self.fuzz < 1.0 { self.fuzz } else { 1.0 };
         let reflected = reflect(unit_vector(ray_in.direction), hit_record.normal);
@@ -84,12 +85,12 @@ pub struct Dielectric{
 }
 
 impl Dielectric {
-    pub fn new(ior: f64) -> Dielectric {
-        Dielectric{ ior }
+    pub fn new(ior: f64) -> Material {
+        Arc::new(Dielectric{ ior })
     }
 }
 
-impl Material for Dielectric {
+impl Scatter for Dielectric {
     fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         attenuation.set(1.0, 1.0, 1.0);
         let refraction_ratio = if hit_record.front_face { 1.0 / self.ior } else { self.ior };

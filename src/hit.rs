@@ -1,6 +1,6 @@
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
-use crate::materials::Material;
+use crate::material::Material;
 use std::sync::Arc;
 
 pub struct HitRecord {
@@ -8,7 +8,7 @@ pub struct HitRecord {
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
-    pub material: Option<Arc<dyn Material + Sync + Send>>,
+    pub material: Option<Material>,
 }
 
 impl HitRecord {
@@ -39,8 +39,10 @@ pub trait Hit {
     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool;
 }
 
+pub type HitArc = Arc<dyn Hit + Sync + Send>;
+
 pub struct HitList {
-    objects: Vec<Arc<Box<dyn Hit + Sync + Send>>>,
+    objects: Vec<Arc<dyn Hit + Sync + Send>>,
 }
 
 impl HitList {
@@ -48,12 +50,8 @@ impl HitList {
         HitList{ objects: Vec::new() }
     }
 
-    pub fn clear(&mut self) {
-        self.objects.clear();
-    }
-
-    pub fn add(&mut self, object: Box<dyn Hit + Sync + Send>) {
-        self.objects.push(Arc::new(object));
+    pub fn add(&mut self, object: HitArc) {
+        self.objects.push(object);
     }
 }
 
