@@ -1,19 +1,19 @@
 
 mod camera;
-mod hittable;
+mod hit;
 mod materials;
 mod ray;
 mod sphere;
 mod vec3;
 
 use camera::Camera;
-use hittable::HitRecord;
+use hit::{Hit, HitList, HitRecord};
 use image::{ImageBuffer, RgbImage, Rgb};
-use materials::Material;
 use ray::Ray;
 use rand::random;
 use rand::Rng;
-use sphere::{Sphere, SphereList};
+use sphere::Sphere;
+use materials::{Dielectric, Lambertian, Material, Metal};
 use std::thread;
 use std::sync::Arc;
 use vec3::{Color, Point3, unit_vector, Vec3};
@@ -65,27 +65,22 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 }
 
-fn ray_color(ray: Ray, world: &SphereList, depth: usize) -> Color {
+fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
     if depth <= 0 {
         return Color::new(0., 0., 0.);
     }
     let mut hit_record = HitRecord::new();
-    let tup = world.hit(ray, 0.001, f64::INFINITY, &mut hit_record);
-    let hit = tup.0;
-    let material = tup.1;
-    if hit {
+    if world.hit(ray, 0.001, f64::INFINITY, &mut hit_record) {
         let mut ray_scattered = Ray::new(
             Point3::new(0., 0., 0.),
             Vec3::new(0., 0., 0.)
         );
         let mut attenuation = Color::new(0., 0., 0.);
-        match material {
-            Some(material) => {
-                material.scatter(ray, &mut hit_record, &mut attenuation, &mut ray_scattered);
-                return attenuation * ray_color(ray_scattered, world, depth-1);
-            },
-            None => false
-        };
+        if let Some(ref material) = hit_record.material {
+            let material = material.clone();
+            material.scatter(ray, &mut hit_record, &mut attenuation, &mut ray_scattered);
+            return attenuation * ray_color(ray_scattered, world, depth-1);
+        }
         let target = hit_record.point + Vec3::random_in_hemisphere(hit_record.normal);
         0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
     } else {
@@ -95,12 +90,12 @@ fn ray_color(ray: Ray, world: &SphereList, depth: usize) -> Color {
     }
 }
 
-fn random_scene() -> SphereList {
-    let mut world = SphereList::new();
+fn random_scene() -> HitList {
+    let mut world = HitList::new();
 
-    let ground_material = Material::new_lambertian(0.5, 0.5, 0.5);
-    world.add(Sphere::new(
-        Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material));
+    let ground_material = Lambertian::new(Color::new(0.5, 0.5, 0.5));
+    world.add(Box::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0), 1000.0, Arc::new(ground_material))));
 
     for a in -11..11 {
         for b in -11..11 {
@@ -112,50 +107,49 @@ fn random_scene() -> SphereList {
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
 
-                let material = match choose_mat {
+                let material: Arc<dyn Material + Sync + Send> = match choose_mat {
                     x if x < 0.8 => {
-                        Material::new_lambertian(
+                        Arc::new(Lambertian::new(Color::new(
                             random::<f64>()*random::<f64>(),
                             random::<f64>()*random::<f64>(),
                             random::<f64>()*random::<f64>(),
-                        )
+                        )))
                     }
                     x if x < 0.95 => {
-                        Material::new_metal(
-                            (
+                        Arc::new(Metal::new(Color::new(
                                 random::<f64>()*random::<f64>(),
                                 random::<f64>()*random::<f64>(),
                                 random::<f64>()*random::<f64>(),
                             ),
                             rand::thread_rng().gen_range(0.0..0.5)
-                        )
+                        ))
                     }
                     _ => {
-                        Material::new_dielectric(1.5)
+                        Arc::new(Dielectric::new(1.5))
                     }
                 };
-                world.add(Sphere::new(center, 0.2, material));
+                world.add(Box::new(Sphere::new(center, 0.2, material)));
             }
         }
     }
 
-    let material1 = Material::new_dielectric(1.5);
-    world.add(Sphere::new(
-        Point3::new(0.0, 1.0, 0.0), 1.0, material1));
+    let material1 = Dielectric::new(1.5);
+    world.add(Box::new(Sphere::new(
+        Point3::new(0.0, 1.0, 0.0), 1.0, Arc::new(material1))));
 
-    let material2 = Material::new_lambertian(0.4, 0.2, 0.1);
-    world.add(Sphere::new(
-        Point3::new(-4.0, 1.0, 0.0), 1.0, material2));
+    let material2 = Lambertian::new(Color::new(0.4, 0.2, 0.1));
+    world.add(Box::new(Sphere::new(
+        Point3::new(-4.0, 1.0, 0.0), 1.0, Arc::new(material2))));
 
-    let material3 = Material::new_metal((0.7, 0.6, 0.5), 0.0);
-    world.add(Sphere::new(
-        Point3::new(4.0, 1.0, 0.0), 1.0, material3));
+    let material3 = Metal::new(Color::new(0.7, 0.6, 0.5), 0.0);
+    world.add(Box::new(Sphere::new(
+        Point3::new(4.0, 1.0, 0.0), 1.0, Arc::new(material3))));
 
     world
 }
 
 fn render(
-    world: &SphereList,
+    world: &HitList,
     camera: &Camera,
     image_width: usize,
     image_height: usize,
@@ -188,9 +182,9 @@ fn main() {
 
     // Image
     let aspect_ratio = 3.0/2.0;
-    let image_width = 1200;
+    let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 500;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     // World

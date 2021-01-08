@@ -1,47 +1,8 @@
-use crate::hittable::HitRecord;
+use crate::hit::HitRecord;
 use crate::ray::Ray;
 use crate::vec3::{Color, dot, unit_vector, Vec3};
 use rand;
 
-#[derive(Clone)]
-pub enum Material {
-    Lambertian{ albedo: Color },
-    Metal{ albedo: Color, fuzz: f64 },
-    Dielectric{ ior: f64 },
-}
-
-impl Material {
-
-    pub fn new_dielectric(ior: f64) -> Material {
-        Material::Dielectric{ ior }
-    }
-
-    pub fn new_lambertian(r: f64, g: f64, b: f64) -> Material {
-        Material::Lambertian{ albedo: Color::new(r, g, b) }
-    }
-
-    pub fn new_metal(rgb: (f64, f64, f64), fuzz: f64) -> Material {
-        let (r, g, b) = rgb;
-        Material::Metal{ albedo: Color::new(r, g, b), fuzz }
-    }
-
-    pub fn scatter(
-        &self,
-        ray_in: Ray,
-        hit_record: &mut HitRecord,
-        attenuation: &mut Color,
-        ray_scattered: &mut Ray) -> bool {
-
-        match self {
-            Material::Lambertian{ albedo } =>
-                scatter_lambertian(*albedo, ray_in, hit_record, attenuation, ray_scattered),
-            Material::Metal{ albedo, fuzz } =>
-                scatter_metal(*albedo, *fuzz, ray_in, hit_record, attenuation, ray_scattered),
-            Material::Dielectric{ ior } =>
-                scatter_dielectric(*ior, ray_in, hit_record, attenuation, ray_scattered),
-        }
-    }
-}
 
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - 2.*dot(v, n)*n
@@ -60,14 +21,78 @@ pub fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     return r0 + (1.0-r0)*(1.0 -cosine).powi(5);
 }
 
-fn scatter_dielectric(
-    ior: f64,
-    ray_in: Ray,
-    hit_record: &mut HitRecord,
-    attenuation: &mut Color,
-    ray_scattered: &mut Ray) -> bool {
+
+pub trait Material {
+    fn scatter(
+        &self,
+        ray_in: Ray,
+        hit_record: &mut HitRecord,
+        attenuation: &mut Color,
+        ray_scattered: &mut Ray) -> bool;
+}
+
+
+pub struct Lambertian{
+    albedo: Color
+}
+
+impl Lambertian {
+    pub fn new(albedo: Color) -> Lambertian {
+        Lambertian{ albedo }
+    }
+}
+
+impl Material for Lambertian {
+    fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+        let mut scatter_direction = hit_record.normal + Vec3::random_unit_vector();
+
+        if scatter_direction.near_zero() {
+            scatter_direction = hit_record.normal;
+        }
+
+        ray_scattered.origin.copy(hit_record.point);
+        ray_scattered.direction.copy(scatter_direction);
+        attenuation.copy(self.albedo);
+        return true;
+    }
+}
+
+pub struct Metal{
+    albedo: Color,
+    fuzz: f64
+}
+
+impl Metal {
+    pub fn new(albedo: Color, fuzz: f64) -> Metal {
+        Metal{ albedo, fuzz }
+    }
+}
+
+impl Material for Metal {
+    fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+        let fuzz = if self.fuzz < 1.0 { self.fuzz } else { 1.0 };
+        let reflected = reflect(unit_vector(ray_in.direction), hit_record.normal);
+        ray_scattered.origin.copy(hit_record.point);
+        ray_scattered.direction.copy(reflected + fuzz*Vec3::random_in_unit_sphere());
+        attenuation.copy(self.albedo);
+        return true;
+    }
+}
+
+pub struct Dielectric{
+    ior: f64
+}
+
+impl Dielectric {
+    pub fn new(ior: f64) -> Dielectric {
+        Dielectric{ ior }
+    }
+}
+
+impl Material for Dielectric {
+    fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         attenuation.set(1.0, 1.0, 1.0);
-        let refraction_ratio = if hit_record.front_face { 1.0 / ior } else { ior };
+        let refraction_ratio = if hit_record.front_face { 1.0 / self.ior } else { self.ior };
 
         let unit_direction = unit_vector(ray_in.direction);
         let cos_theta = dot(-unit_direction, hit_record.normal).min(1.0);
@@ -84,37 +109,5 @@ fn scatter_dielectric(
         ray_scattered.origin.copy(hit_record.point);
         ray_scattered.direction.copy(direction);
         return true;
-}
-
-fn scatter_lambertian(
-    albedo: Color,
-    _ray_in: Ray,
-    hit_record: &mut HitRecord,
-    attenuation: &mut Color,
-    ray_scattered: &mut Ray) -> bool {
-        let mut scatter_direction = hit_record.normal + Vec3::random_unit_vector();
-
-        if scatter_direction.near_zero() {
-            scatter_direction = hit_record.normal;
-        }
-
-        ray_scattered.origin.copy(hit_record.point);
-        ray_scattered.direction.copy(scatter_direction);
-        attenuation.copy(albedo);
-        return true;
-}
-
-fn scatter_metal(
-    albedo: Color,
-    fuzz: f64,
-    ray_in: Ray,
-    hit_record: &mut HitRecord,
-    attenuation: &mut Color,
-    ray_scattered: &mut Ray) -> bool {
-        let fuzz = if fuzz < 1.0 { fuzz } else { 1.0 };
-        let reflected = reflect(unit_vector(ray_in.direction), hit_record.normal);
-        ray_scattered.origin.copy(hit_record.point);
-        ray_scattered.direction.copy(reflected + fuzz*Vec3::random_in_unit_sphere());
-        attenuation.copy(albedo);
-        return true;
+    }
 }
