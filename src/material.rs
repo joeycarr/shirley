@@ -44,7 +44,7 @@ impl Lambertian {
 }
 
 impl Scatter for Lambertian {
-    fn scatter(&self, _ray_in: Ray, hitrec: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: Ray, hitrec: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         let mut scatter_direction = hitrec.normal + Vec3::random_unit_vector();
 
         if scatter_direction.near_zero() {
@@ -53,6 +53,7 @@ impl Scatter for Lambertian {
 
         ray_scattered.origin.copy(hitrec.point);
         ray_scattered.direction.copy(scatter_direction);
+        ray_scattered.time = ray_in.time;
         attenuation.copy(self.albedo);
         return true;
     }
@@ -75,6 +76,7 @@ impl Scatter for Metal {
         let reflected = reflect(unit_vector(ray_in.direction), hitrec.normal);
         ray_scattered.origin.copy(hitrec.point);
         ray_scattered.direction.copy(reflected + fuzz*Vec3::random_in_unit_sphere());
+        ray_scattered.time = ray_in.time;
         attenuation.copy(self.albedo);
         return true;
     }
@@ -109,6 +111,7 @@ impl Scatter for Dielectric {
 
         ray_scattered.origin.copy(hitrec.point);
         ray_scattered.direction.copy(direction);
+        ray_scattered.time = ray_in.time;
         return true;
     }
 }

@@ -1,6 +1,8 @@
 mod camera;
 mod hit;
 mod material;
+mod movingsphere;
+mod rand;
 mod ray;
 mod sphere;
 mod vec3;
@@ -9,10 +11,11 @@ use camera::Camera;
 use hit::{Hit, HitList, HitRecord};
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
-use rand::random;
-use rand::Rng;
+use crate::rand::rf64;
 use sphere::Sphere;
-use material::{Dielectric, Lambertian, Material, Metal};
+use movingsphere::MovingSphere;
+use material::{Dielectric, Lambertian, Metal};
+use crate::rand::randrange;
 use std::thread;
 use std::sync::Arc;
 use vec3::{Color, Point3, unit_vector, Vec3};
@@ -72,18 +75,19 @@ fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
     if world.hit(ray, 0.001, f64::INFINITY, &mut hitrec) {
         let mut ray_scattered = Ray::new(
             Point3::new(0., 0., 0.),
-            Vec3::new(0., 0., 0.)
+            Vec3::new(0., 0., 0.),
+            0.0
         );
         let mut attenuation = Color::new(0., 0., 0.);
 
         if let Some(ref material) = hitrec.material {
-            let material = material.clone();
+            let material = Arc::clone(material);
             material.scatter(ray, &mut hitrec, &mut attenuation, &mut ray_scattered);
             return attenuation * ray_color(ray_scattered, world, depth-1);
         }
 
         let target = hitrec.point + Vec3::random_in_hemisphere(hitrec.normal);
-        0.5 * ray_color(Ray::new(hitrec.point, target - hitrec.point), world, depth-1)
+        0.5 * ray_color(Ray::new(hitrec.point, target - hitrec.point, ray.time), world, depth-1)
     } else {
         let unit_direction = unit_vector(ray.direction);
         let t = 0.5*(unit_direction.y + 1.0);
@@ -100,36 +104,39 @@ fn random_scene() -> HitList {
 
     for a in -11..11 {
         for b in -11..11 {
-            let choose_mat = random::<f64>();
+            let choose_mat = rf64();
             let center = Point3::new(
-                a as f64 + 0.9*random::<f64>(),
+                a as f64 + 0.9*rf64(),
                 0.2,
-                b as f64 + 0.9*random::<f64>());
+                b as f64 + 0.9*rf64());
 
             if (center - Point3::new(4.0, 0.2, 0.0)).length() > 0.9 {
 
-                let material: Material = match choose_mat {
+                match choose_mat {
                     x if x < 0.8 => {
-                        Lambertian::new(Color::new(
-                            random::<f64>()*random::<f64>(),
-                            random::<f64>()*random::<f64>(),
-                            random::<f64>()*random::<f64>(),
-                        ))
+                        let material = Lambertian::new(Color::new(
+                            rf64()*rf64(),
+                            rf64()*rf64(),
+                            rf64()*rf64(),
+                        ));
+                        let center2 = center + Vec3::new(0.0, randrange(0.0, 0.5), 0.0);
+                        world.add(MovingSphere::new(center, center2, 0.0, 1.0, 0.2, material));
                     }
                     x if x < 0.95 => {
-                        Metal::new(Color::new(
-                                random::<f64>()*random::<f64>(),
-                                random::<f64>()*random::<f64>(),
-                                random::<f64>()*random::<f64>(),
+                        let material = Metal::new(Color::new(
+                                rf64()*rf64(),
+                                rf64()*rf64(),
+                                rf64()*rf64(),
                             ),
-                            rand::thread_rng().gen_range(0.0..0.5)
-                        )
+                            randrange(0.0, 0.5)
+                        );
+                        world.add(Sphere::new(center, 0.2, material));
                     }
                     _ => {
-                        Dielectric::new(1.5)
+                        let material = Dielectric::new(1.5);
+                        world.add(Sphere::new(center, 0.2, material));
                     }
                 };
-                world.add(Sphere::new(center, 0.2, material));
             }
         }
     }
@@ -163,8 +170,8 @@ fn render(
         for i in 0..image_width {
             let mut pixel_color = Color::new(0., 0., 0.);
             for _ in 0..samples_per_pixel {
-                let u = (i as f64 + random::<f64>()) / (image_width-1) as f64;
-                let v = (j as f64 + random::<f64>()) / (image_height-1) as f64;
+                let u = (i as f64 + rf64()) / (image_width-1) as f64;
+                let v = (j as f64 + rf64()) / (image_height-1) as f64;
 
                 let r = camera.get_ray(u, v);
                 pixel_color += ray_color(r, &world, max_depth);
@@ -182,7 +189,7 @@ fn render(
 fn main() {
 
     // Image
-    let aspect_ratio = 3.0/2.0;
+    let aspect_ratio = 16.0/9.0;
     let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pixel = 100;
@@ -203,6 +210,7 @@ fn main() {
         lookfrom, lookat, vup,
         20.0, // vertical fov
         aspect_ratio, aperture, dist_to_focus,
+        0.0, 1.0 // shutter time
     );
 
     // Render

@@ -1,12 +1,5 @@
-use rand;
-use rand::Rng;
 use std::{fmt, ops};
-
-fn rf64() -> f64 { rand::random::<f64>() }
-fn randrange(min: f64, max: f64) -> f64 {
-    let mut rng = rand::thread_rng();
-    rng.gen_range(min..max)
-}
+use crate::rand::{rf64, randrange};
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vec3 {

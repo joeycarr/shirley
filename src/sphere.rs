@@ -39,6 +39,7 @@ impl Hit for Sphere {
         let outward_normal = (hitrec.point - self.center) / self.radius;
         hitrec.set_face_normal(ray, outward_normal);
 
+        // Note that we're cloning the enclosing Arc, not the material itself.
         hitrec.material = Some(self.material.clone());
 
         true
