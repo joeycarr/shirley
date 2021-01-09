@@ -1,4 +1,3 @@
-
 mod camera;
 mod hit;
 mod material;
@@ -69,22 +68,22 @@ fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
     if depth <= 0 {
         return Color::new(0., 0., 0.);
     }
-    let mut hit_record = HitRecord::new();
-    if world.hit(ray, 0.001, f64::INFINITY, &mut hit_record) {
+    let mut hitrec = HitRecord::new();
+    if world.hit(ray, 0.001, f64::INFINITY, &mut hitrec) {
         let mut ray_scattered = Ray::new(
             Point3::new(0., 0., 0.),
             Vec3::new(0., 0., 0.)
         );
         let mut attenuation = Color::new(0., 0., 0.);
 
-        if let Some(ref material) = hit_record.material {
+        if let Some(ref material) = hitrec.material {
             let material = material.clone();
-            material.scatter(ray, &mut hit_record, &mut attenuation, &mut ray_scattered);
+            material.scatter(ray, &mut hitrec, &mut attenuation, &mut ray_scattered);
             return attenuation * ray_color(ray_scattered, world, depth-1);
         }
 
-        let target = hit_record.point + Vec3::random_in_hemisphere(hit_record.normal);
-        0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
+        let target = hitrec.point + Vec3::random_in_hemisphere(hitrec.normal);
+        0.5 * ray_color(Ray::new(hitrec.point, target - hitrec.point), world, depth-1)
     } else {
         let unit_direction = unit_vector(ray.direction);
         let t = 0.5*(unit_direction.y + 1.0);

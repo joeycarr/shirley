@@ -17,7 +17,7 @@ impl Sphere {
 }
 
 impl Hit for Sphere {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool {
         let oc = ray.origin - self.center;
         let a = ray.direction.length_squared();
         let half_b = dot(oc, ray.direction);
@@ -34,12 +34,12 @@ impl Hit for Sphere {
             return false;
         }
 
-        hit_record.t = root;
-        hit_record.point = ray.at(hit_record.t);
-        let outward_normal = (hit_record.point - self.center) / self.radius;
-        hit_record.set_face_normal(ray, outward_normal);
+        hitrec.t = root;
+        hitrec.point = ray.at(hitrec.t);
+        let outward_normal = (hitrec.point - self.center) / self.radius;
+        hitrec.set_face_normal(ray, outward_normal);
 
-        hit_record.material = Some(self.material.clone());
+        hitrec.material = Some(self.material.clone());
 
         true
     }

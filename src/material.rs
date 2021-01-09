@@ -26,7 +26,7 @@ pub trait Scatter {
     fn scatter(
         &self,
         ray_in: Ray,
-        hit_record: &mut HitRecord,
+        hitrec: &mut HitRecord,
         attenuation: &mut Color,
         ray_scattered: &mut Ray) -> bool;
 }
@@ -44,14 +44,14 @@ impl Lambertian {
 }
 
 impl Scatter for Lambertian {
-    fn scatter(&self, _ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
-        let mut scatter_direction = hit_record.normal + Vec3::random_unit_vector();
+    fn scatter(&self, _ray_in: Ray, hitrec: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+        let mut scatter_direction = hitrec.normal + Vec3::random_unit_vector();
 
         if scatter_direction.near_zero() {
-            scatter_direction = hit_record.normal;
+            scatter_direction = hitrec.normal;
         }
 
-        ray_scattered.origin.copy(hit_record.point);
+        ray_scattered.origin.copy(hitrec.point);
         ray_scattered.direction.copy(scatter_direction);
         attenuation.copy(self.albedo);
         return true;
@@ -70,10 +70,10 @@ impl Metal {
 }
 
 impl Scatter for Metal {
-    fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: Ray, hitrec: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         let fuzz = if self.fuzz < 1.0 { self.fuzz } else { 1.0 };
-        let reflected = reflect(unit_vector(ray_in.direction), hit_record.normal);
-        ray_scattered.origin.copy(hit_record.point);
+        let reflected = reflect(unit_vector(ray_in.direction), hitrec.normal);
+        ray_scattered.origin.copy(hitrec.point);
         ray_scattered.direction.copy(reflected + fuzz*Vec3::random_in_unit_sphere());
         attenuation.copy(self.albedo);
         return true;
@@ -91,23 +91,23 @@ impl Dielectric {
 }
 
 impl Scatter for Dielectric {
-    fn scatter(&self, ray_in: Ray, hit_record: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
+    fn scatter(&self, ray_in: Ray, hitrec: &mut HitRecord, attenuation: &mut Color, ray_scattered: &mut Ray) -> bool {
         attenuation.set(1.0, 1.0, 1.0);
-        let refraction_ratio = if hit_record.front_face { 1.0 / self.ior } else { self.ior };
+        let refraction_ratio = if hitrec.front_face { 1.0 / self.ior } else { self.ior };
 
         let unit_direction = unit_vector(ray_in.direction);
-        let cos_theta = dot(-unit_direction, hit_record.normal).min(1.0);
+        let cos_theta = dot(-unit_direction, hitrec.normal).min(1.0);
         let sin_theta = (1.0 - cos_theta*cos_theta).sqrt();
 
         let cannot_refract = refraction_ratio * sin_theta > 1.0;
 
         let direction = if cannot_refract || reflectance(cos_theta, refraction_ratio) > rand::random::<f64>() {
-            reflect(unit_direction, hit_record.normal)
+            reflect(unit_direction, hitrec.normal)
         } else {
-            refract(unit_direction, hit_record.normal, refraction_ratio)
+            refract(unit_direction, hitrec.normal, refraction_ratio)
         };
 
-        ray_scattered.origin.copy(hit_record.point);
+        ray_scattered.origin.copy(hitrec.point);
         ray_scattered.direction.copy(direction);
         return true;
     }

@@ -44,7 +44,7 @@ impl HitRecord {
 }
 
 pub trait Hit {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool;
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool;
 }
 
 pub type HitArc = Arc<dyn Hit + Sync + Send>;
@@ -64,7 +64,7 @@ impl HitList {
 }
 
 impl Hit for HitList {
-    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hit_record: &mut HitRecord) -> bool {
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool {
         let mut temp_rec = HitRecord::new();
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
@@ -73,7 +73,7 @@ impl Hit for HitList {
             if object.hit(ray, t_min, closest_so_far, &mut temp_rec) {
                 hit_anything = true;
                 closest_so_far = temp_rec.t;
-                hit_record.copy(&temp_rec);
+                hitrec.copy(&temp_rec);
             }
         }
 
