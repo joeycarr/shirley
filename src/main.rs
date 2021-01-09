@@ -76,11 +76,13 @@ fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
             Vec3::new(0., 0., 0.)
         );
         let mut attenuation = Color::new(0., 0., 0.);
+
         if let Some(ref material) = hit_record.material {
             let material = material.clone();
             material.scatter(ray, &mut hit_record, &mut attenuation, &mut ray_scattered);
             return attenuation * ray_color(ray_scattered, world, depth-1);
         }
+
         let target = hit_record.point + Vec3::random_in_hemisphere(hit_record.normal);
         0.5 * ray_color(Ray::new(hit_record.point, target - hit_record.point), world, depth-1)
     } else {
