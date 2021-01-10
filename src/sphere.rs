@@ -1,6 +1,7 @@
+use crate::aabb::AABB;
 use crate::hit::{Hit, HitArc, HitRecord};
 use crate::ray::Ray;
-use crate::vec3::{dot, Point3};
+use crate::vec3::{dot, Point3, Vec3};
 use crate::material::Material;
 use std::sync::Arc;
 
@@ -42,6 +43,14 @@ impl Hit for Sphere {
         // Note that we're cloning the enclosing Arc, not the material itself.
         hitrec.material = Some(self.material.clone());
 
+        true
+    }
+
+    fn bounding_box(&self, _time0: f64, _time1: f64, aabb: &mut AABB) -> bool {
+        *aabb = AABB::new(
+            self.center - Vec3::new(self.radius, self.radius, self.radius),
+            self.center + Vec3::new(self.radius, self.radius, self.radius)
+        );
         true
     }
 

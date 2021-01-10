@@ -1,7 +1,7 @@
 use std::{fmt, ops};
 use crate::rand::{rf64, randrange};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct Vec3 {
     pub x: f64,
     pub y: f64,
@@ -83,6 +83,10 @@ impl Vec3 {
     pub fn near_zero(&self) -> bool {
         let s = 1e-8;
         return self.x.abs() < s && self.y.abs() < s && self.z.abs() < s;
+    }
+
+    pub fn as_array(&self) -> [f64; 3] {
+        [self.x, self.y, self.z]
     }
 }
 

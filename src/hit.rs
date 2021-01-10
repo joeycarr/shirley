@@ -1,6 +1,8 @@
+use crate::aabb::{AABB, aabb_compare, surrounding_box};
 use crate::ray::Ray;
 use crate::vec3::{dot, Point3, Vec3};
 use crate::material::Material;
+use std::cmp::Ordering;
 use std::sync::Arc;
 
 pub struct HitRecord {
@@ -45,12 +47,14 @@ impl HitRecord {
 
 pub trait Hit {
     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool;
+
+    fn bounding_box(&self, time0: f64, time1: f64, aabb: &mut AABB) -> bool;
 }
 
 pub type HitArc = Arc<dyn Hit + Sync + Send>;
 
 pub struct HitList {
-    objects: Vec<Arc<dyn Hit + Sync + Send>>,
+    pub objects: Vec<HitArc>,
 }
 
 impl HitList {
@@ -79,4 +83,33 @@ impl Hit for HitList {
 
         return hit_anything;
     }
+
+    fn bounding_box(&self, time0: f64, time1: f64, aabb: &mut AABB) -> bool {
+        let mut temp_box = AABB::default();
+        let mut first_box = true;
+
+        for object in &self.objects {
+            if object.bounding_box(time0, time1, &mut temp_box) {
+                *aabb = if first_box { temp_box } else { surrounding_box(temp_box, *aabb) };
+                first_box = false;
+            } else {
+                return false;
+            }
+        }
+
+        true
+    }
+}
+
+pub fn hit_compare(a: HitArc, b: HitArc, axis: usize) -> Ordering {
+    let mut box_a = AABB::default();
+    let mut box_b = AABB::default();
+
+    // Generating a runtime error seems unfortunate here when we might be able to avoid this using
+    // compile time checks
+    if (! a.bounding_box(0.0, 0.0, &mut box_a)) || (!b.bounding_box(0.0, 0.0, &mut box_b)) {
+        panic!("Attempting to compare an object without a bounding box");
+    }
+
+    aabb_compare(box_a, box_b, axis)
 }

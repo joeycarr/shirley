@@ -1,7 +1,8 @@
+use crate::aabb::{AABB, surrounding_box};
 use crate::hit::{Hit, HitArc, HitRecord};
 use crate::material::Material;
 use crate::ray::Ray;
-use crate::vec3::{dot, Point3};
+use crate::vec3::{dot, Point3, Vec3};
 use std::sync::Arc;
 
 pub struct MovingSphere {
@@ -51,9 +52,22 @@ impl Hit for MovingSphere {
         let outward_normal = (hitrec.point - self.center(ray.time)) / self.radius;
         hitrec.set_face_normal(ray, outward_normal);
 
-        // Note that we're cloning the enclousing Arc, not the material itself.
+        // Note that we're cloning the enclosing Arc, not the material itself.
         hitrec.material = Some(self.material.clone());
 
         true
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64, aabb: &mut AABB) -> bool {
+        let box0 = AABB::new(
+            self.center(time0) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(time0) + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        let box1 = AABB::new(
+            self.center(time1) - Vec3::new(self.radius, self.radius, self.radius),
+            self.center(time1) + Vec3::new(self.radius, self.radius, self.radius),
+        );
+        *aabb = surrounding_box(box0, box1);
+        true // indicates we have a bouding box (infinite planes don't)
     }
 }

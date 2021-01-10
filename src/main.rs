@@ -1,3 +1,5 @@
+mod aabb;
+mod bvh;
 mod camera;
 mod hit;
 mod material;
@@ -7,6 +9,7 @@ mod ray;
 mod sphere;
 mod vec3;
 
+use bvh::BVHNode;
 use camera::Camera;
 use hit::{Hit, HitList, HitRecord};
 use image::{ImageBuffer, RgbImage, Rgb};
@@ -153,6 +156,9 @@ fn random_scene() -> HitList {
     world.add(Sphere::new(
         Point3::new(4.0, 1.0, 0.0), 1.0, material3));
 
+    let bvh = BVHNode::from_hitlist(&world, 0.0, 1.0);
+    let mut world = HitList::new();
+    world.add(Arc::new(bvh));
     world
 }
 
