@@ -7,6 +7,7 @@ mod movingsphere;
 mod rand;
 mod ray;
 mod sphere;
+mod texture;
 mod vec3;
 
 use bvh::BVHNode;
@@ -21,6 +22,7 @@ use material::{Dielectric, Lambertian, Metal};
 use crate::rand::randrange;
 use std::thread;
 use std::sync::Arc;
+use texture::Checker;
 use vec3::{Color, Point3, unit_vector, Vec3};
 
 /**
@@ -74,7 +76,7 @@ fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
     if depth <= 0 {
         return Color::new(0., 0., 0.);
     }
-    let mut hitrec = HitRecord::new();
+    let mut hitrec = HitRecord::default();
     if world.hit(ray, 0.001, f64::INFINITY, &mut hitrec) {
         let mut ray_scattered = Ray::new(
             Point3::new(0., 0., 0.),
@@ -99,9 +101,11 @@ fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
 }
 
 fn random_scene() -> HitList {
-    let mut world = HitList::new();
+    let mut world = HitList::default();
 
-    let ground_material = Lambertian::new(Color::new(0.5, 0.5, 0.5));
+    let ground_material = Lambertian::new(Checker::new(
+        Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9)
+    ));
     world.add(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0), 1000.0, ground_material));
 
@@ -117,7 +121,7 @@ fn random_scene() -> HitList {
 
                 match choose_mat {
                     x if x < 0.8 => {
-                        let material = Lambertian::new(Color::new(
+                        let material = Lambertian::from_color(Color::new(
                             rf64()*rf64(),
                             rf64()*rf64(),
                             rf64()*rf64(),
@@ -148,7 +152,7 @@ fn random_scene() -> HitList {
     world.add(Sphere::new(
         Point3::new(0.0, 1.0, 0.0), 1.0, material1));
 
-    let material2 = Lambertian::new(Color::new(0.4, 0.2, 0.1));
+    let material2 = Lambertian::from_color(Color::new(0.4, 0.2, 0.1));
     world.add(Sphere::new(
         Point3::new(-4.0, 1.0, 0.0), 1.0, material2));
 
@@ -157,7 +161,7 @@ fn random_scene() -> HitList {
         Point3::new(4.0, 1.0, 0.0), 1.0, material3));
 
     let bvh = BVHNode::from_hitlist(&world, 0.0, 1.0);
-    let mut world = HitList::new();
+    let mut world = HitList::default();
     world.add(Arc::new(bvh));
     world
 }

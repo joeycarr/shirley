@@ -5,24 +5,18 @@ use crate::material::Material;
 use std::cmp::Ordering;
 use std::sync::Arc;
 
+#[derive(Default)]
 pub struct HitRecord {
     pub point: Point3,
     pub normal: Vec3,
     pub t: f64,
     pub front_face: bool,
     pub material: Option<Material>,
+    pub u: f64,
+    pub v: f64,
 }
 
 impl HitRecord {
-    pub fn new() -> HitRecord {
-        HitRecord{
-            point: Point3::new(0., 0., 0.),
-            normal: Vec3::new(0., 0., 0.),
-            t: 0.,
-            front_face: false,
-            material: None
-        }
-    }
 
     pub fn set_face_normal(&mut self, ray: Ray, outward_normal: Vec3) {
         self.front_face = dot(ray.direction, outward_normal) < 0.0;
@@ -53,15 +47,12 @@ pub trait Hit {
 
 pub type HitArc = Arc<dyn Hit + Sync + Send>;
 
+#[derive(Default)]
 pub struct HitList {
     pub objects: Vec<HitArc>,
 }
 
 impl HitList {
-    pub fn new() -> HitList {
-        HitList{ objects: Vec::new() }
-    }
-
     pub fn add(&mut self, object: HitArc) {
         self.objects.push(object);
     }
@@ -69,7 +60,7 @@ impl HitList {
 
 impl Hit for HitList {
     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool {
-        let mut temp_rec = HitRecord::new();
+        let mut temp_rec = HitRecord::default();
         let mut hit_anything = false;
         let mut closest_so_far = t_max;
 

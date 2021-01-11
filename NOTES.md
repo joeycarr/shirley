@@ -32,3 +32,9 @@ dead code in my first test. Confirmed it at 85 seconds for eight threads.
 Eliminated the dead code error and obtained a result of 28 seconds. For the
 final scene from Book 1, plus motion blur, the BVH provides a 3x speedup.
 Presumably that could be even better in some circumstances.
+
+I may have fouled the test by running the 28 second version without the power
+adapter, or while the processor was warmer? I've seen results as low as 15
+seconds, which could imply as much as a 5.7x speedup with the BVH tree. Hard to
+say. The inconsistency could also be due to the non-deterministic construction
+of the BVH tree and the random construction of the scene itself.
