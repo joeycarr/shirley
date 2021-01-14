@@ -166,6 +166,17 @@ fn random_scene() -> HitList {
     world
 }
 
+fn two_spheres() -> HitList {
+    let mut objects = HitList::default();
+
+    let checker = Checker::new(Color::new(0.2, 0.3, 0.1), Color::new(0.9, 0.9, 0.9));
+
+    objects.add(Sphere::new(Point3::new(0.0, -10.0, 0.0), 10.0, Lambertian::new(Arc::clone(&checker))));
+    objects.add(Sphere::new(Point3::new(0.0,  10.0, 0.0), 10.0, Lambertian::new(Arc::clone(&checker))));
+
+    objects
+}
+
 fn render(
     world: &HitList,
     camera: &Camera,
@@ -200,25 +211,42 @@ fn main() {
 
     // Image
     let aspect_ratio = 16.0/9.0;
-    let image_width = 400;
+    let image_width = 1200;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 500;
     let max_depth = 50;
 
     // World
+    let lookfrom: Point3;
+    let lookat: Point3;
+    let vfov: f64;
+    let aperture: f64;
 
-    let world = random_scene();
+    let world: HitList = match 2 {
+        1 => {
+            lookfrom = Point3::new(13.0 ,2.0 ,3.0);
+            lookat = Point3::new(0.0 ,0.0 ,0.0);
+            vfov = 20.0;
+            aperture = 0.1;
+            random_scene()
+        }
+        // make 2 the catchall for now so match is exhaustive
+        _ => {
+            lookfrom = Point3::new(13.0 ,2.0 ,3.0);
+            lookat = Point3::new(0.0 ,0.0 ,0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+            two_spheres()
+        }
+    };
 
     // Camera
-    let lookfrom = Point3::new(13.0, 2.0, 3.0);
-    let lookat = Point3::new(0.0, 0.0, 0.0);
     let vup = Vec3::new(0.0, 1.0,  0.0);
     let dist_to_focus = 10.0;
-    let aperture = 0.1;
 
     let camera = Camera::new(
         lookfrom, lookat, vup,
-        20.0, // vertical fov
+        vfov, // vertical fov
         aspect_ratio, aperture, dist_to_focus,
         0.0, 1.0 // shutter time
     );
