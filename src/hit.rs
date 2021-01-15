@@ -28,6 +28,8 @@ impl HitRecord {
         self.normal = other.normal;
         self.t = other.t;
         self.front_face = other.front_face;
+        self.u = other.u;
+        self.v = other.v;
         match other.material {
             Some(ref material) => {
                 self.material = Some(Arc::clone(material));

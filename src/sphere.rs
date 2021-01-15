@@ -40,7 +40,7 @@ impl Hit for Sphere {
         let outward_normal = (hitrec.point - self.center) / self.radius;
         hitrec.set_face_normal(ray, outward_normal);
 
-        get_sphere_uv(hitrec.point, &mut hitrec.u, &mut hitrec.v);
+        get_sphere_uv(outward_normal, &mut hitrec.u, &mut hitrec.v);
 
         // Note that we're cloning the enclosing Arc, not the material itself.
         hitrec.material = Some(self.material.clone());
@@ -59,9 +59,9 @@ impl Hit for Sphere {
 }
 
 pub fn get_sphere_uv(p: Point3, u: &mut f64, v: &mut f64) {
-    let theta = -p.y.acos();
+    let theta = (-p.y).acos();
     let phi = (-p.z).atan2(p.x) + std::f64::consts::PI;
 
-    *u = phi / (2.0 * std::f64::consts::PI);
+    *u = phi / (2.0*std::f64::consts::PI);
     *v = theta / std::f64::consts::PI;
 }

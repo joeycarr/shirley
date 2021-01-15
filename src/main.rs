@@ -23,7 +23,7 @@ use material::{Dielectric, Lambertian, Metal};
 use crate::rand::randrange;
 use std::thread;
 use std::sync::Arc;
-use texture::{Checker, Perlin};
+use texture::{Checker, Perlin, Image};
 use vec3::{Color, Point3, unit_vector, Vec3};
 
 /**
@@ -188,6 +188,17 @@ fn two_perlin_spheres() -> HitList {
     objects
 }
 
+fn earth() -> HitList {
+    let earth_texture = Image::new("textures/earthmap.jpg");
+    let earth_material = Lambertian::new(earth_texture);
+    let globe = Sphere::new(Point3::new(0.0, 0.0, 0.0), 2.0, earth_material);
+
+    let mut objects = HitList::default();
+    objects.add(globe);
+
+    objects
+}
+
 fn render(
     world: &HitList,
     camera: &Camera,
@@ -233,7 +244,7 @@ fn main() {
     let vfov: f64;
     let aperture: f64;
 
-    let world: HitList = match 3 {
+    let world: HitList = match 4 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
@@ -248,12 +259,19 @@ fn main() {
             aperture = 0.0;
             two_spheres()
         }
-        _ => {
+        3 => {
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
             two_perlin_spheres()
+        }
+        _ => {
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+            earth()
         }
     };
 
