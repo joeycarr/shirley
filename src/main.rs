@@ -181,7 +181,7 @@ fn two_spheres() -> HitList {
 fn two_perlin_spheres() -> HitList {
     let mut objects = HitList::default();
 
-    let pertext = Perlin::new();
+    let pertext = Perlin::new(4.0);
     objects.add(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, Lambertian::new(Arc::clone(&pertext))));
     objects.add(Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Lambertian::new(Arc::clone(&pertext))));
 
