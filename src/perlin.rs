@@ -1,10 +1,10 @@
-use crate::rand::{rf64, randidx};
-use crate::vec3::Point3;
+use crate::rand::randidx;
+use crate::vec3::{dot, Point3, Vec3};
 
 const POINT_COUNT: usize = 256;
 
 pub struct PerlinNoise {
-    ranfloat: Vec<f64>,
+    ranvec: Vec<Vec3>,
     perm_x: Vec<usize>,
     perm_y: Vec<usize>,
     perm_z: Vec<usize>,
@@ -12,14 +12,14 @@ pub struct PerlinNoise {
 
 impl PerlinNoise {
     pub fn new() -> PerlinNoise {
-        let mut ranfloat = Vec::with_capacity(POINT_COUNT);
+        let mut ranvec = Vec::with_capacity(POINT_COUNT);
         for _ in 0..POINT_COUNT {
-            ranfloat.push(rf64());
+            ranvec.push(Vec3::randrange(-1.0, 1.0));
         }
         let perm_x = perlin_generate_perm();
         let perm_y = perlin_generate_perm();
         let perm_z = perlin_generate_perm();
-        PerlinNoise{ ranfloat, perm_x, perm_y, perm_z }
+        PerlinNoise{ ranvec, perm_x, perm_y, perm_z }
     }
 
     pub fn noise(&self, p: Point3) -> f64 {
@@ -27,20 +27,16 @@ impl PerlinNoise {
         let v = p.y - p.y.floor();
         let w = p.z - p.z.floor();
 
-        let u = u*u*(3.0-2.0*u);
-        let v = v*v*(3.0-2.0*v);
-        let w = w*w*(3.0-2.0*w);
-
         let i = p.x.floor() as i32;
         let j = p.y.floor() as i32;
         let k = p.z.floor() as i32;
 
-        let mut c: [[[f64; 2]; 2]; 2] = [[[0.0; 2]; 2]; 2];
+        let mut c: [[[Vec3; 2]; 2]; 2] = [[[Vec3::default(); 2]; 2]; 2];
 
         for di in 0..2 {
             for dj in 0..2 {
                 for dk in 0..2 {
-                    c[di][dj][dk] = self.ranfloat[(
+                    c[di][dj][dk] = self.ranvec[(
                         self.perm_x[(i+(di as i32)) as usize & 255] ^
                         self.perm_y[(j+(dj as i32)) as usize & 255] ^
                         self.perm_z[(k+(dk as i32)) as usize & 255]
@@ -73,7 +69,7 @@ fn permute(p: &mut Vec<usize>) {
     }
 }
 
-fn trilinear_interp(c: [[[f64; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
+fn trilinear_interp(c: [[[Vec3; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
     let mut accum = 0.0f64;
 
     for iu in 0..2 {
@@ -82,10 +78,12 @@ fn trilinear_interp(c: [[[f64; 2]; 2]; 2], u: f64, v: f64, w: f64) -> f64 {
             let j = ju as f64;
             for ku in 0..2 {
                 let k = ku as f64;
+                let weight_v = Vec3::new(u-i, v-j, w-k);
                 accum +=
                     (i*u + (1.0-i)*(1.0-u))*
                     (j*v + (1.0-j)*(1.0-v))*
-                    (k*w + (1.0-k)*(1.0-w))*c[iu][ju][ku];
+                    (k*w + (1.0-k)*(1.0-w))*
+                    dot(c[iu][ju][ku], weight_v);
             }
         }
     }
