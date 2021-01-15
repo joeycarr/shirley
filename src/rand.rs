@@ -8,3 +8,8 @@ pub fn randrange(min: f64, max: f64) -> f64 {
     let mut rng = rand::thread_rng();
     rng.gen_range(min..max)
 }
+
+pub fn randidx(min: usize, max: usize) -> usize {
+    let mut rng = rand::thread_rng();
+    rng.gen_range(min..max)
+}

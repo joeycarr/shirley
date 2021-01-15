@@ -4,6 +4,7 @@ mod camera;
 mod hit;
 mod material;
 mod movingsphere;
+mod perlin;
 mod rand;
 mod ray;
 mod sphere;
@@ -22,7 +23,7 @@ use material::{Dielectric, Lambertian, Metal};
 use crate::rand::randrange;
 use std::thread;
 use std::sync::Arc;
-use texture::Checker;
+use texture::{Checker, Perlin};
 use vec3::{Color, Point3, unit_vector, Vec3};
 
 /**
@@ -177,6 +178,16 @@ fn two_spheres() -> HitList {
     objects
 }
 
+fn two_perlin_spheres() -> HitList {
+    let mut objects = HitList::default();
+
+    let pertext = Perlin::new();
+    objects.add(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, Lambertian::new(Arc::clone(&pertext))));
+    objects.add(Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Lambertian::new(Arc::clone(&pertext))));
+
+    objects
+}
+
 fn render(
     world: &HitList,
     camera: &Camera,
@@ -211,9 +222,9 @@ fn main() {
 
     // Image
     let aspect_ratio = 16.0/9.0;
-    let image_width = 1200;
+    let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 500;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     // World
@@ -222,7 +233,7 @@ fn main() {
     let vfov: f64;
     let aperture: f64;
 
-    let world: HitList = match 2 {
+    let world: HitList = match 3 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
@@ -230,13 +241,19 @@ fn main() {
             aperture = 0.1;
             random_scene()
         }
-        // make 2 the catchall for now so match is exhaustive
-        _ => {
+        2 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
             vfov = 20.0;
             aperture = 0.0;
             two_spheres()
+        }
+        _ => {
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+            two_perlin_spheres()
         }
     };
 
