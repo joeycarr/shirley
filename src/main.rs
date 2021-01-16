@@ -73,31 +73,31 @@ fn imsave(name: &str, width: usize, height: usize, data: Vec<f64>) {
 
 }
 
-fn ray_color(ray: Ray, world: &HitList, depth: usize) -> Color {
+fn ray_color(ray: Ray, world: &HitList, depth: usize, background: Color) -> Color {
     if depth <= 0 {
         return Color::new(0., 0., 0.);
     }
+
     let mut hitrec = HitRecord::default();
     if world.hit(ray, 0.001, f64::INFINITY, &mut hitrec) {
-        let mut ray_scattered = Ray::new(
-            Point3::new(0., 0., 0.),
-            Vec3::new(0., 0., 0.),
-            0.0
-        );
+        let mut ray_scattered = Ray::default();
         let mut attenuation = Color::new(0., 0., 0.);
 
         if let Some(ref material) = hitrec.material {
-            let material = Arc::clone(material);
-            material.scatter(ray, &mut hitrec, &mut attenuation, &mut ray_scattered);
-            return attenuation * ray_color(ray_scattered, world, depth-1);
+            let material = Arc::clone(&material);
+            let emitted = material.emitted(hitrec.u, hitrec.v, hitrec.point);
+
+            if material.scatter(ray, &mut hitrec, &mut attenuation, &mut ray_scattered) {
+                return emitted + attenuation * ray_color(ray_scattered, world, depth-1, background);
+            } else {
+                return emitted;
+            }
+        } else {
+            panic!("If something in the world hits, then it must update the material on the hit record.");
         }
 
-        let target = hitrec.point + Vec3::random_in_hemisphere(hitrec.normal);
-        0.5 * ray_color(Ray::new(hitrec.point, target - hitrec.point, ray.time), world, depth-1)
     } else {
-        let unit_direction = unit_vector(ray.direction);
-        let t = 0.5*(unit_direction.y + 1.0);
-        (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0)
+        return background;
     }
 }
 
@@ -205,7 +205,8 @@ fn render(
     image_width: usize,
     image_height: usize,
     samples_per_pixel: usize,
-    max_depth: usize
+    max_depth: usize,
+    background: Color,
 ) -> Vec<f64> {
     let mut data: Vec<f64> = Vec::with_capacity(image_width*image_height*3);
 
@@ -217,7 +218,7 @@ fn render(
                 let v = (j as f64 + rf64()) / (image_height-1) as f64;
 
                 let r = camera.get_ray(u, v);
-                pixel_color += ray_color(r, &world, max_depth);
+                pixel_color += ray_color(r, &world, max_depth, background);
             }
             let scale = 1. / samples_per_pixel as f64;
             data.push((pixel_color.x * scale).sqrt());
@@ -243,13 +244,15 @@ fn main() {
     let lookat: Point3;
     let vfov: f64;
     let aperture: f64;
+    let background: Color;
 
-    let world: HitList = match 4 {
+    let world: HitList = match 5 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
             vfov = 20.0;
             aperture = 0.1;
+            background = Color::new(0.7, 0.8, 1.0);
             random_scene()
         }
         2 => {
@@ -257,6 +260,7 @@ fn main() {
             lookat = Point3::new(0.0 ,0.0 ,0.0);
             vfov = 20.0;
             aperture = 0.0;
+            background = Color::new(0.7, 0.8, 1.0);
             two_spheres()
         }
         3 => {
@@ -264,13 +268,23 @@ fn main() {
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
+            background = Color::new(0.7, 0.8, 1.0);
             two_perlin_spheres()
+        }
+        4 => {
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+            background = Color::new(0.7, 0.8, 1.0);
+            earth()
         }
         _ => {
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
+            background = Color::new(0.0, 0.0, 0.0);
             earth()
         }
     };
@@ -309,7 +323,7 @@ fn main() {
 
         let handle = thread::spawn(move || {
             println!("Starting thread #{} of {}", i, thread_count);
-            let data = render(&worldref, &camref, image_width, image_height, samples_per_thread, max_depth);
+            let data = render(&worldref, &camref, image_width, image_height, samples_per_thread, max_depth, background);
             println!("Completed thread #{} of {}", i, thread_count);
             data
         });

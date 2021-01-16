@@ -1,7 +1,7 @@
 use crate::hit::HitRecord;
 use crate::ray::Ray;
 use crate::texture::{SolidColor, Texture};
-use crate::vec3::{Color, dot, unit_vector, Vec3};
+use crate::vec3::{Color, dot, Point3, unit_vector, Vec3};
 use rand;
 use std::sync::Arc;
 
@@ -30,6 +30,11 @@ pub trait Scatter {
         hitrec: &mut HitRecord,
         attenuation: &mut Color,
         ray_scattered: &mut Ray) -> bool;
+
+    fn emitted(&self, _u: f64, _v: f64, _p: Point3) -> Color {
+        Color::default()
+    }
+
 }
 
 pub type Material = Arc<dyn Scatter + Sync + Send>;
@@ -118,5 +123,31 @@ impl Scatter for Dielectric {
         ray_scattered.direction.copy(direction);
         ray_scattered.time = ray_in.time;
         return true;
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Texture,
+}
+
+impl DiffuseLight {
+    pub fn new(emit: Texture) -> Material {
+        Arc::new(DiffuseLight{ emit })
+    }
+}
+
+impl Scatter for DiffuseLight {
+    fn scatter(
+        &self,
+        _ray_in: Ray,
+        _hitrec: &mut HitRecord,
+        _attenuation: &mut Color,
+        _ray_scattered: &mut Ray) -> bool {
+
+        false
+    }
+
+    fn emitted(&self, u: f64, v: f64, p: Point3) -> Color {
+        self.emit.value(u, v, p)
     }
 }
