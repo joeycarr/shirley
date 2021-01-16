@@ -1,4 +1,5 @@
 mod aabb;
+mod aarect;
 mod bvh;
 mod camera;
 mod hit;
@@ -11,6 +12,7 @@ mod sphere;
 mod texture;
 mod vec3;
 
+use aarect::XYRect;
 use bvh::BVHNode;
 use camera::Camera;
 use hit::{Hit, HitList, HitRecord};
@@ -19,12 +21,12 @@ use ray::Ray;
 use crate::rand::rf64;
 use sphere::Sphere;
 use movingsphere::MovingSphere;
-use material::{Dielectric, Lambertian, Metal};
+use material::{Dielectric, DiffuseLight, Lambertian, Metal};
 use crate::rand::randrange;
 use std::thread;
 use std::sync::Arc;
-use texture::{Checker, Perlin, Image};
-use vec3::{Color, Point3, unit_vector, Vec3};
+use texture::{Checker, Perlin, Image, SolidColor};
+use vec3::{Color, Point3, Vec3};
 
 /**
  * Averages the corresponding indices in the given list of vectors. The result is a vector as long
@@ -199,6 +201,19 @@ fn earth() -> HitList {
     objects
 }
 
+fn simple_light() -> HitList {
+    let mut objects = HitList::default();
+
+    let pertext = Perlin::new(4.0);
+    objects.add(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, Lambertian::new(Arc::clone(&pertext))));
+    objects.add(Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Lambertian::new(Arc::clone(&pertext))));
+
+    let difflight = DiffuseLight::new(SolidColor::new(Color::new(4.0, 4.0, 4.0)));
+    objects.add(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight));
+
+    objects
+}
+
 fn render(
     world: &HitList,
     camera: &Camera,
@@ -236,7 +251,7 @@ fn main() {
     let aspect_ratio = 16.0/9.0;
     let image_width = 400;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 400;
     let max_depth = 50;
 
     // World
@@ -280,12 +295,12 @@ fn main() {
             earth()
         }
         _ => {
-            lookfrom = Point3::new(13.0, 2.0, 3.0);
-            lookat = Point3::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(26.0, 3.0, 6.0);
+            lookat = Point3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
             background = Color::new(0.0, 0.0, 0.0);
-            earth()
+            simple_light()
         }
     };
 
