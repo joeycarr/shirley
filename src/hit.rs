@@ -94,6 +94,40 @@ impl Hit for HitList {
     }
 }
 
+pub struct Translate {
+    thing: HitArc,
+    offset: Vec3,
+}
+
+impl Translate {
+    pub fn new(thing: HitArc, offset: Vec3) -> HitArc {
+        Arc::new(Translate{ thing, offset })
+    }
+}
+
+impl Hit for Translate {
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool {
+        let moved = Ray::new(ray.origin - self.offset, ray.direction, ray.time);
+        if self.thing.hit(moved, t_min, t_max, hitrec) {
+            hitrec.point += self.offset;
+            hitrec.set_face_normal(moved, hitrec.normal);
+            true
+        } else {
+            false
+        }
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64, aabb: &mut AABB) -> bool {
+        if self.thing.bounding_box(time0, time1, aabb) {
+            aabb.min += self.offset;
+            aabb.max += self.offset;
+            true
+        } else {
+            false
+        }
+    }
+}
+
 pub fn hit_compare(a: HitArc, b: HitArc, axis: usize) -> Ordering {
     let mut box_a = AABB::default();
     let mut box_b = AABB::default();
