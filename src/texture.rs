@@ -19,6 +19,10 @@ impl SolidColor {
     pub fn new(color: Color) -> Texture {
         Arc::new(SolidColor{ color })
     }
+
+    pub fn from_rgb(r: f64, g: f64, b: f64) -> Texture {
+        SolidColor::new(Color::new(r, g, b))
+    }
 }
 
 impl Value for SolidColor {

@@ -12,7 +12,7 @@ mod sphere;
 mod texture;
 mod vec3;
 
-use aarect::XYRect;
+use aarect::{XYRect, XZRect, YZRect};
 use bvh::BVHNode;
 use camera::Camera;
 use hit::{Hit, HitList, HitRecord};
@@ -214,6 +214,26 @@ fn simple_light() -> HitList {
     objects
 }
 
+fn cornell_box() -> HitList {
+    let mut objects = HitList::default();
+
+    let red = Lambertian::new(SolidColor::from_rgb(0.65, 0.05, 0.05));
+    let white = Lambertian::new(SolidColor::from_rgb(0.73, 0.73, 0.73));
+    let green = Lambertian::new(SolidColor::from_rgb(0.12, 0.45, 0.15));
+    let light = DiffuseLight::new(SolidColor::from_rgb(15.0, 15.0, 15.0));
+
+    objects.add(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green));
+    objects.add(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red));
+
+    objects.add(XZRect::new(213.0, 343.0, 227.0, 332.0, 554.0, light));
+    objects.add(XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&white)));
+    objects.add(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
+
+    objects.add(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
+
+    objects
+}
+
 fn render(
     world: &HitList,
     camera: &Camera,
@@ -248,8 +268,8 @@ fn render(
 fn main() {
 
     // Image
-    let aspect_ratio = 16.0/9.0;
-    let image_width = 400;
+    let aspect_ratio = 1.0;
+    let image_width = 600;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pixel = 400;
     let max_depth = 50;
@@ -261,7 +281,7 @@ fn main() {
     let aperture: f64;
     let background: Color;
 
-    let world: HitList = match 5 {
+    let world: HitList = match 6 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
@@ -294,13 +314,21 @@ fn main() {
             background = Color::new(0.7, 0.8, 1.0);
             earth()
         }
-        _ => {
+        5 => {
             lookfrom = Point3::new(26.0, 3.0, 6.0);
             lookat = Point3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
             background = Color::new(0.0, 0.0, 0.0);
             simple_light()
+        }
+        _ => {
+            lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+            aperture = 0.0;
+            background = Color::new(0.0, 0.0, 0.0);
+            cornell_box()
         }
     };
 
@@ -337,9 +365,9 @@ fn main() {
         let camref = Arc::clone(&camref);
 
         let handle = thread::spawn(move || {
-            println!("Starting thread #{} of {}", i, thread_count);
+            println!("Starting thread #{} of {}", i+1, thread_count);
             let data = render(&worldref, &camref, image_width, image_height, samples_per_thread, max_depth, background);
-            println!("Completed thread #{} of {}", i, thread_count);
+            println!("Completed thread #{} of {}", i+1, thread_count);
             data
         });
 
