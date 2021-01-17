@@ -1,5 +1,6 @@
 mod aabb;
 mod aarect;
+mod box3d;
 mod bvh;
 mod camera;
 mod hit;
@@ -13,6 +14,7 @@ mod texture;
 mod vec3;
 
 use aarect::{XYRect, XZRect, YZRect};
+use box3d::Box3D;
 use bvh::BVHNode;
 use camera::Camera;
 use hit::{Hit, HitList, HitRecord};
@@ -230,6 +232,17 @@ fn cornell_box() -> HitList {
     objects.add(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
 
     objects.add(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
+
+    objects.add(Box3D::new(
+        Point3::new(130.0, 0.0, 65.0),
+        Point3::new(295.0, 165.0, 230.0),
+        Arc::clone(&white),
+    ));
+    objects.add(Box3D::new(
+        Point3::new(265.0, 0.0, 295.0),
+        Point3::new(430.0, 330.0, 460.0),
+        Arc::clone(&white),
+    ));
 
     objects
 }
