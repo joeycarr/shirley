@@ -128,6 +128,101 @@ impl Hit for Translate {
     }
 }
 
+pub struct RotateY {
+    thing: HitArc,
+    sin_theta: f64,
+    cos_theta: f64,
+    aabb: Option<AABB>
+}
+
+impl RotateY {
+    pub fn new(thing: HitArc, theta: f64) -> HitArc {
+        let cos_theta = theta.cos();
+        let sin_theta = theta.sin();
+        let mut bbox = AABB::default();
+        let aabb;
+        if thing.bounding_box(0.0, 1.0, &mut bbox) {
+            let mut min = [f64::INFINITY, f64::INFINITY, f64::INFINITY];
+            let mut max = [f64::NEG_INFINITY, f64::NEG_INFINITY, f64::NEG_INFINITY];
+
+            for i in 0..2 {
+                let i = i as f64;
+                for j in 0..2 {
+                    let j = j as f64;
+                    for k in 0..2 {
+                        let k = k as f64;
+                        let x = i*bbox.max.x + (1.0-i)*bbox.min.x;
+                        let y = j*bbox.max.y + (1.0-j)*bbox.min.y;
+                        let z = k*bbox.max.z + (1.0-k)*bbox.min.z;
+
+                        let newx =  cos_theta*x + sin_theta*z;
+                        let newz = -sin_theta*x + cos_theta*z;
+
+                        let tester = [newx, y, newz];
+
+                        for c in 0..3 {
+                            min[c] = min[c].min(tester[c]);
+                            max[c] = max[c].max(tester[c]);
+                        }
+                    }
+                }
+            }
+            aabb = Some(AABB::new(
+                Point3::from_array(min),
+                Point3::from_array(max),
+            ));
+        } else {
+            aabb = None
+        }
+        Arc::new(RotateY{ thing, sin_theta, cos_theta, aabb })
+    }
+}
+
+impl Hit for RotateY {
+    fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool {
+        let mut origin = ray.origin;
+        let mut direction = ray.direction;
+
+        origin.x = self.cos_theta*ray.origin.x - self.sin_theta*ray.origin.z;
+        origin.z = self.sin_theta*ray.origin.x + self.cos_theta*ray.origin.z;
+
+        direction.x = self.cos_theta*ray.direction.x - self.sin_theta*ray.direction.z;
+        direction.z = self.sin_theta*ray.direction.x + self.cos_theta*ray.direction.z;
+
+        let rotated = Ray::new(origin, direction, ray.time);
+
+        if self.thing.hit(rotated, t_min, t_max, hitrec) {
+            let mut point = hitrec.point;
+            let mut normal = hitrec.normal;
+
+            point.x =  self.cos_theta*hitrec.point.x + self.sin_theta*hitrec.point.z;
+            point.z = -self.sin_theta*hitrec.point.x + self.cos_theta*hitrec.point.z;
+
+            normal.x = self.cos_theta*hitrec.normal.x + self.sin_theta*hitrec.normal.z;
+            normal.z = self.sin_theta*hitrec.normal.x + self.cos_theta*hitrec.normal.z;
+
+            hitrec.point = point;
+            hitrec.set_face_normal(rotated, normal);
+
+            true
+        } else {
+            false
+        }
+    }
+
+    fn bounding_box(&self, _time0: f64, _time1: f64, aabb: &mut AABB) -> bool {
+        match self.aabb {
+            Some(bbox) => {
+                *aabb = bbox;
+                true
+            },
+            None => {
+                false
+            },
+        }
+    }
+}
+
 pub fn hit_compare(a: HitArc, b: HitArc, axis: usize) -> Ordering {
     let mut box_a = AABB::default();
     let mut box_b = AABB::default();

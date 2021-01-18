@@ -17,7 +17,7 @@ use aarect::{XYRect, XZRect, YZRect};
 use box3d::Box3D;
 use bvh::BVHNode;
 use camera::Camera;
-use hit::{Hit, HitList, HitRecord};
+use hit::{Hit, HitList, HitRecord, Translate, RotateY};
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
 use crate::rand::rf64;
@@ -233,16 +233,15 @@ fn cornell_box() -> HitList {
 
     objects.add(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
 
-    objects.add(Box3D::new(
-        Point3::new(130.0, 0.0, 65.0),
-        Point3::new(295.0, 165.0, 230.0),
-        Arc::clone(&white),
-    ));
-    objects.add(Box3D::new(
-        Point3::new(265.0, 0.0, 295.0),
-        Point3::new(430.0, 330.0, 460.0),
-        Arc::clone(&white),
-    ));
+    let box1 = Box3D::new(Point3::new(0.0, 0.0, 0.0), Point3::new(165.0, 330.0, 165.0), Arc::clone(&white));
+    let box1 = RotateY::new(box1, 15f64.to_radians());
+    let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
+    objects.add(box1);
+
+    let box2 = Box3D::new(Point3::new(0.0, 0.0, 0.0), Point3::new(165.0, 165.0, 165.0), Arc::clone(&white));
+    let box2 = RotateY::new(box2, -18f64.to_radians());
+    let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
+    objects.add(box2);
 
     objects
 }
@@ -284,7 +283,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 400;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     // World

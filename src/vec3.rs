@@ -14,6 +14,10 @@ impl Vec3 {
         Vec3{x, y, z}
     }
 
+    pub fn from_array(p: [f64; 3]) -> Vec3 {
+        Vec3{ x: p[0], y: p[1], z: p[2] }
+    }
+
     pub fn length_squared(&self) -> f64 {
         self.x*self.x + self.y*self.y + self.z*self.z
     }
