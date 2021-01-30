@@ -331,7 +331,7 @@ fn final_scene() -> HitList {
     objects.add(Sphere::new(Point3::new(0.0, 150.0, 145.0), 50.0, Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)));
 
     let boundary = Sphere::new(Point3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
-    //objects.add(Arc::clone(&boundary));
+    objects.add(Arc::clone(&boundary));
     objects.add(ConstantMedium::new(Arc::clone(&boundary), 0.2, Color::new(0.2, 0.4, 0.9)));
     let boundary = Sphere::new(Point3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
     objects.add(ConstantMedium::new(boundary, 0.0001, Color::new(1.0, 1.0, 1.0)));
@@ -394,9 +394,9 @@ fn main() {
 
     // Image
     let aspect_ratio = 1.0;
-    let image_width = 600;
+    let image_width = 800;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 10;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     // World
@@ -406,7 +406,7 @@ fn main() {
     let aperture: f64;
     let background: Color;
 
-    let world: HitList = match 9 {
+    let world: HitList = match 8 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
