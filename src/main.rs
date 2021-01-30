@@ -279,6 +279,18 @@ fn cornell_smoke() -> HitList {
     objects
 }
 
+fn sphere_volume_test() -> HitList {
+    let mut objects = HitList::default();
+
+    objects.add(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, Lambertian::from_color(Color::new(0.73, 0.73, 0.73))));
+
+    let boundary = Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Dielectric::new(1.5));
+    let cm = ConstantMedium::new(boundary, 0.2, Color::new(1.0, 0.0, 0.0));
+    objects.add(cm);
+
+    objects
+}
+
 fn final_scene() -> HitList {
     let mut boxes1: HitList = Default::default();
 
@@ -394,7 +406,7 @@ fn main() {
     let aperture: f64;
     let background: Color;
 
-    let world: HitList = match 8 {
+    let world: HitList = match 9 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
@@ -451,13 +463,21 @@ fn main() {
             background = Color::new(0.0, 0.0, 0.0);
             cornell_smoke()
         }
-        _ => {
+        8 => {
             lookfrom = Point3::new(478.0, 278.0, -600.0);
             lookat = Point3::new(278.0, 278.0, 0.0);
             vfov = 40.0;
             aperture = 0.0;
             background = Color::new(0.0, 0.0, 0.0);
             final_scene()
+        }
+        _ => {
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+            aperture = 0.0;
+            background = Color::new(0.7, 0.8, 1.0);
+            sphere_volume_test()
         }
     };
 

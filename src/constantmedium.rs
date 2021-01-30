@@ -27,17 +27,24 @@ impl ConstantMedium {
 
 impl Hit for ConstantMedium {
     fn hit(&self, ray: Ray, t_min: f64, t_max: f64, hitrec: &mut HitRecord) -> bool {
+        const DEBUG: bool = false;
+        let debug = DEBUG && rf64() < 0.00001;
 
         let mut rec1: HitRecord = Default::default();
         let mut rec2: HitRecord = Default::default();
 
         if self.boundary.hit(ray, f64::NEG_INFINITY, f64::INFINITY, &mut rec1) {
+            if debug {
+                println!("rec1.t == {:?}", rec1.t);
+                println!("ray.at(rec1.t) == {:?}", ray.at(rec1.t));
+            }
+
             if self.boundary.hit(ray, rec1.t+0.0001, f64::INFINITY, &mut rec2) {
 
                 rec1.t = if rec1.t < t_min { t_min } else { rec1.t };
                 rec2.t = if rec2.t > t_max { rec2.t } else { rec2.t };
 
-                if rec1.t <= rec2.t {
+                if rec1.t < rec2.t {
                     rec1.t = if rec1.t < 0.0 { 0.0 } else { rec1.t };
 
                     let ray_length = ray.direction.length();
@@ -53,18 +60,23 @@ impl Hit for ConstantMedium {
                         hitrec.front_face = true;
                         hitrec.material = Some(Arc::clone(&self.phase_function));
 
+                        if debug { println!("All the way down"); }
                         true
 
                     } else {
+                        if debug { println!("Not inside boundary."); }
                         false
                     }
                 } else {
+                    if debug { println!("rec1.t >= rec2.t"); }
                     false
                 }
             } else {
+                if debug { println!("no hit inner"); }
                 false
             }
         } else {
+            //if debug { println!("no hit outer"); }
             false
         }
     }

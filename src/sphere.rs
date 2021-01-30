@@ -30,9 +30,12 @@ impl Hit for Sphere {
         }
 
         let sqrtd = discriminant.sqrt();
-        let root = (-half_b - sqrtd) / a;
+        let mut root = (-half_b - sqrtd) / a; // subtract sqrtd
         if root < t_min || t_max < root {
-            return false;
+            root = (-half_b + sqrtd) / a; // plus this time
+            if root < t_min || t_max < root {
+                return false;
+            }
         }
 
         hitrec.t = root;
