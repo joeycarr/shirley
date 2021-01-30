@@ -3,6 +3,7 @@ mod aarect;
 mod box3d;
 mod bvh;
 mod camera;
+mod constantmedium;
 mod hit;
 mod material;
 mod movingsphere;
@@ -17,6 +18,7 @@ use aarect::{XYRect, XZRect, YZRect};
 use box3d::Box3D;
 use bvh::BVHNode;
 use camera::Camera;
+use constantmedium::ConstantMedium;
 use hit::{Hit, HitList, HitRecord, Translate, RotateY};
 use image::{ImageBuffer, RgbImage, Rgb};
 use ray::Ray;
@@ -246,6 +248,37 @@ fn cornell_box() -> HitList {
     objects
 }
 
+fn cornell_smoke() -> HitList {
+    let mut objects = HitList::default();
+
+    let red = Lambertian::new(SolidColor::from_rgb(0.65, 0.05, 0.05));
+    let white = Lambertian::new(SolidColor::from_rgb(0.73, 0.73, 0.73));
+    let green = Lambertian::new(SolidColor::from_rgb(0.12, 0.45, 0.15));
+    let light = DiffuseLight::new(SolidColor::from_rgb(7.0, 7.0, 7.0));
+
+    objects.add(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green));
+    objects.add(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red));
+
+    objects.add(XZRect::new(113.0, 443.0, 127.0, 432.0, 554.0, light));
+    objects.add(XZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, Arc::clone(&white)));
+    objects.add(XZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
+
+    objects.add(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, Arc::clone(&white)));
+
+    let box1 = Box3D::new(Point3::new(0.0, 0.0, 0.0), Point3::new(165.0, 330.0, 165.0), Arc::clone(&white));
+    let box1 = RotateY::new(box1, 15f64.to_radians());
+    let box1 = Translate::new(box1, Vec3::new(265.0, 0.0, 295.0));
+
+    let box2 = Box3D::new(Point3::new(0.0, 0.0, 0.0), Point3::new(165.0, 165.0, 165.0), Arc::clone(&white));
+    let box2 = RotateY::new(box2, -18f64.to_radians());
+    let box2 = Translate::new(box2, Vec3::new(130.0, 0.0, 65.0));
+
+    objects.add(ConstantMedium::new(box1, 0.01, Color::new(0.0, 0.0, 0.0)));
+    objects.add(ConstantMedium::new(box2, 0.01, Color::new(1.0, 1.0, 1.0)));
+
+    objects
+}
+
 fn render(
     world: &HitList,
     camera: &Camera,
@@ -283,7 +316,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 200;
     let max_depth = 50;
 
     // World
@@ -293,7 +326,7 @@ fn main() {
     let aperture: f64;
     let background: Color;
 
-    let world: HitList = match 6 {
+    let world: HitList = match 7 {
         1 => {
             lookfrom = Point3::new(13.0 ,2.0 ,3.0);
             lookat = Point3::new(0.0 ,0.0 ,0.0);
@@ -334,13 +367,21 @@ fn main() {
             background = Color::new(0.0, 0.0, 0.0);
             simple_light()
         }
-        _ => {
+        6 => {
             lookfrom = Point3::new(278.0, 278.0, -800.0);
             lookat = Point3::new(278.0, 278.0, 0.0);
             vfov = 40.0;
             aperture = 0.0;
             background = Color::new(0.0, 0.0, 0.0);
             cornell_box()
+        }
+        _ => {
+            lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+            aperture = 0.0;
+            background = Color::new(0.0, 0.0, 0.0);
+            cornell_smoke()
         }
     };
 
