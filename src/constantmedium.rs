@@ -51,7 +51,7 @@ impl Hit for ConstantMedium {
                     let distance_inside_boundary = (rec2.t - rec1.t) * ray_length;
                     let hit_distance = self.neg_inv_density * rf64().ln();
 
-                    if hit_distance < distance_inside_boundary {
+                    if hit_distance <= distance_inside_boundary {
 
                         hitrec.t = rec1.t + hit_distance / ray_length;
                         hitrec.point = ray.at(hitrec.t);

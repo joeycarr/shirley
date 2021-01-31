@@ -20,7 +20,7 @@ pub fn refract(uv: Vec3, n: Vec3, etai_over_etat: f64 ) -> Vec3 {
 pub fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     let r0 = (1.0-ref_idx) / (1.0+ref_idx);
     let r0 = r0*r0;
-    return r0 + (1.0-r0)*(1.0 -cosine).powi(5);
+    return r0 + (1.0-r0)*(1.0 - cosine).powi(5);
 }
 
 pub trait Scatter {

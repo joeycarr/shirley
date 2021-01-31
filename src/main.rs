@@ -285,8 +285,11 @@ fn sphere_volume_test() -> HitList {
     objects.add(Sphere::new(Point3::new(0.0, -1000.0, 0.0), 1000.0, Lambertian::from_color(Color::new(0.73, 0.73, 0.73))));
 
     let boundary = Sphere::new(Point3::new(0.0, 2.0, 0.0), 2.0, Dielectric::new(1.5));
-    let cm = ConstantMedium::new(boundary, 0.2, Color::new(1.0, 0.0, 0.0));
+    objects.add(Arc::clone(&boundary));
+    let cm = ConstantMedium::new(Arc::clone(&boundary), 0.2, Color::new(0.2, 0.4, 0.9));
     objects.add(cm);
+
+    objects.add(Sphere::new(Point3::new(2.0, 0.5, 2.0), 0.5, DiffuseLight::new(SolidColor::from_rgb(10.0, 10.0, 10.0))));
 
     objects
 }
@@ -330,14 +333,20 @@ fn final_scene() -> HitList {
     objects.add(Sphere::new(Point3::new(260.0, 150.0, 45.0), 50.0, Dielectric::new(1.5)));
     objects.add(Sphere::new(Point3::new(0.0, 150.0, 145.0), 50.0, Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)));
 
+    // Subsurface sphere
     let boundary = Sphere::new(Point3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
     objects.add(Arc::clone(&boundary));
     objects.add(ConstantMedium::new(Arc::clone(&boundary), 0.2, Color::new(0.2, 0.4, 0.9)));
+
+    // Atmosphere
     let boundary = Sphere::new(Point3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
     objects.add(ConstantMedium::new(boundary, 0.0001, Color::new(1.0, 1.0, 1.0)));
 
+    // Earth
     let emat = Lambertian::new(Image::new("textures/earthmap.jpg"));
     objects.add(Sphere::new(Point3::new(400.0, 200.0, 400.0), 100.0, emat));
+
+    // Perlin textured sphere at center
     let pertext = Perlin::new(0.1);
     objects.add(Sphere::new(Point3::new(220.0, 280.0, 300.0), 80.0, Lambertian::new(pertext)));
 
@@ -394,7 +403,7 @@ fn main() {
 
     // Image
     let aspect_ratio = 1.0;
-    let image_width = 800;
+    let image_width = 600;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
     let samples_per_pixel = 100;
     let max_depth = 50;
@@ -472,8 +481,8 @@ fn main() {
             final_scene()
         }
         _ => {
-            lookfrom = Point3::new(13.0, 2.0, 3.0);
-            lookat = Point3::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(15.0, 4.0, 3.0);
+            lookat = Point3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
             aperture = 0.0;
             background = Color::new(0.7, 0.8, 1.0);
