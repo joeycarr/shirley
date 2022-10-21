@@ -405,7 +405,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = (image_width as f64 / aspect_ratio) as usize;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 10;
     let max_depth = 50;
 
     // World

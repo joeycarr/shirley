@@ -53,7 +53,7 @@ impl Hit for ConstantMedium {
 
                     if hit_distance <= distance_inside_boundary {
 
-                        hitrec.t = rec1.t + hit_distance / ray_length;
+                        hitrec.t = rec1.t + (hit_distance / ray_length);
                         hitrec.point = ray.at(hitrec.t);
 
                         hitrec.normal = Vec3::new(1.0, 0.0, 0.0);
